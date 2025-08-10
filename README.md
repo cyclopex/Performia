@@ -46,7 +46,7 @@ npm run dev
 
 ## 📊 Roadmap
 
-- [x] **Fase 1**: Core platform (Atletic) ✅
+- [x] **Fase 1**: Core platform (Performia<->) ✅
 - [ ] **Fase 2**: Analytics avanzate e ML
 - [ ] **Fase 3**: App mobile nativa
 - [ ] **Fase 4**: API pubbliche e integrazioni
