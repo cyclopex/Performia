@@ -14,13 +14,10 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log('❌ Credenziali mancanti')
           return null
         }
 
         try {
-          console.log('🔍 Cercando utente:', credentials.email)
-          
           // Cerca l'utente nel database
           const user = await prisma.user.findUnique({
             where: { email: credentials.email },
@@ -28,49 +25,24 @@ export const authOptions = {
           })
 
           if (!user) {
-            console.log('❌ Utente non trovato')
-            return null
-          }
-
-          console.log('✅ Utente trovato:', user.name, 'Role:', user.role)
-
-          // Verifica se l'utente è attivo e approvato
-          if (!user.isActive) {
-            console.log('❌ Utente non attivo')
-            return null
-          }
-
-          if (!user.isApproved) {
-            console.log('❌ Utente non approvato')
             return null
           }
 
           // Verifica la password
-          if (!user.password) {
-            console.log('❌ Password non impostata nel database')
-            return null
-          }
-
-          console.log('🔐 Verificando password...')
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password || '')
           
           if (isPasswordValid) {
-            console.log('✅ Autenticazione riuscita per:', user.email)
             return {
               id: user.id,
               email: user.email,
               name: user.name,
               role: user.role,
-              isApproved: user.isApproved,
-              isActive: user.isActive,
             }
-          } else {
-            console.log('❌ Password non valida')
           }
 
           return null
         } catch (error) {
-          console.error('❌ Errore durante l\'autenticazione:', error)
+          console.error('Errore durante l\'autenticazione:', error)
           return null
         }
       }
@@ -84,8 +56,6 @@ export const authOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
-        token.isApproved = user.isApproved
-        token.isActive = user.isActive
       }
       return token
     },
@@ -93,14 +63,11 @@ export const authOptions = {
       if (token) {
         session.user.id = token.id as string
         session.user.role = token.role as string
-        session.user.isApproved = token.isApproved as boolean
-        session.user.isActive = token.isActive as boolean
       }
       return session
     }
   },
   pages: {
     signIn: '/auth/login',
-  },
-  debug: true, // Abilita debug per vedere i log
+  }
 }

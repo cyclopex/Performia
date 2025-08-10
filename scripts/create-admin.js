@@ -1,73 +1,41 @@
-const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcryptjs')
-const readline = require('readline')
+// scripts/create-admin.js
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
-const prisma = new PrismaClient()
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-})
+const prisma = new PrismaClient();
 
 async function createAdmin() {
   try {
-    console.log('🏆 Creazione Account Amministratore SportLinkedIn\n')
+    console.log('🔐 Creazione utente amministratore...');
     
-    // Controlla se esiste già un admin
-    const existingAdmin = await prisma.user.findFirst({
-      where: { role: 'ADMIN' }
-    })
+    // Richiedi i dati dell'admin
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
 
-    if (existingAdmin) {
-      console.log('❌ Un amministratore esiste già nel sistema!')
-      console.log(`   Email: ${existingAdmin.email}`)
-      process.exit(1)
-    }
+    const question = (query) => new Promise((resolve) => rl.question(query, resolve));
 
-    // Richiedi i dati
-    const name = await question('Nome completo: ')
-    const email = await question('Email: ')
-    const password = await question('Password (min 6 caratteri): ')
-    const confirmPassword = await question('Conferma password: ')
+    const name = await question('Nome: ');
+    const email = await question('Email: ');
+    const password = await question('Password: ');
 
-    // Validazioni
-    if (password.length < 6) {
-      console.log('❌ La password deve essere di almeno 6 caratteri')
-      process.exit(1)
-    }
-
-    if (password !== confirmPassword) {
-      console.log('❌ Le password non coincidono')
-      process.exit(1)
-    }
-
-    // Controlla se l'email è già registrata
+    // Verifica se l'utente esiste già
     const existingUser = await prisma.user.findUnique({
       where: { email }
-    })
+    });
 
     if (existingUser) {
-      console.log('❌ Un utente con questa email esiste già')
-      process.exit(1)
+      console.log('❌ Utente con questa email già esistente!');
+      rl.close();
+      return;
     }
 
-    // Conferma
-    console.log('\n📋 Riepilogo:')
-    console.log(`   Nome: ${name}`)
-    console.log(`   Email: ${email}`)
-    console.log(`   Password: ${'*'.repeat(password.length)}`)
-    
-    const confirm = await question('\nConfermi la creazione? (y/N): ')
-    
-    if (confirm.toLowerCase() !== 'y' && confirm.toLowerCase() !== 'yes') {
-      console.log('❌ Operazione annullata')
-      process.exit(0)
-    }
+    // Hash della password
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Crea l'amministratore
+    // Crea l'utente admin
     const admin = await prisma.user.create({
       data: {
         name,
@@ -75,38 +43,33 @@ async function createAdmin() {
         password: hashedPassword,
         role: 'ADMIN',
         isApproved: true,
+        isActive: true,
+        emailVerified: new Date(),
       }
-    })
+    });
 
     // Crea il profilo
     await prisma.profile.create({
       data: {
         userId: admin.id,
         bio: 'Amministratore del sistema',
-        specializations: ['Gestione Sistema'],
+        specializations: 'Gestione Sistema',
         experience: 'Amministratore principale',
+        isPublic: false,
       }
-    })
+    });
 
-    console.log('\n✅ Amministratore creato con successo!')
-    console.log(`   ID: ${admin.id}`)
-    console.log(`   Nome: ${admin.name}`)
-    console.log(`   Email: ${admin.email}`)
-    console.log(`   Ruolo: ${admin.role}`)
-    console.log('\n🔗 Ora puoi accedere su: http://localhost:3000/auth/login')
-
+    console.log('✅ Utente amministratore creato con successo!');
+    console.log(`📧 Email: ${email}`);
+    console.log(`👤 Nome: ${name}`);
+    console.log(`🔑 ID: ${admin.id}`);
+    
+    rl.close();
   } catch (error) {
-    console.error('❌ Errore durante la creazione:', error.message)
-    process.exit(1)
+    console.error('❌ Errore nella creazione dell\'admin:', error);
   } finally {
-    await prisma.$disconnect()
-    rl.close()
+    await prisma.$disconnect();
   }
 }
 
-function question(query) {
-  return new Promise(resolve => rl.question(query, resolve))
-}
-
-// Esegui lo script
-createAdmin()
+createAdmin();

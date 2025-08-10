@@ -12,7 +12,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:reset": "prisma db push --force-reset",
+    "db:backup": "npx prisma db pull --schema=backups/backup-$(date +%Y%m%d).prisma",
     "create-admin": "node scripts/create-admin.js"
   },
   "dependencies": {
