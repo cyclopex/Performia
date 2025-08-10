@@ -1,0 +1,310 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(ATHLETE)
+  isApproved    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  profile       Profile?
+  connections   Connection[] @relation("UserConnections")
+  connectedTo   Connection[] @relation("ConnectedToUser")
+  workouts      Workout[]
+  raceResults   RaceResult[]
+  anthropometricData AnthropometricData[]
+
+  payments      Payment[]
+  scheduledActivities ScheduledActivity[]
+  assignedActivities ScheduledActivity[] @relation("AssignedActivities")
+  receivedActivities ScheduledActivity[] @relation("ReceivedActivities")
+  chatParticipants    ChatParticipant[]
+  sentMessages        Message[]
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  bio         String?
+  location    String?
+  birthDate   DateTime?
+  phone       String?
+  website     String?
+  specializations String? // Separated by commas
+  experience  String?
+  certifications String? // Separated by commas
+  achievements String? // Separated by commas
+  socialLinks String? // JSON as string
+  avatar      String?
+  coverImage  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Connection {
+  id        String   @id @default(cuid())
+  userId    String
+  connectedUserId String
+  status    ConnectionStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
+  connectedUser User @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectedUserId])
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  date        DateTime
+  duration    Int? // in minutes
+  distance    Float? // in km
+  calories    Int?
+  rpe         Int? // Rate of Perceived Exertion 1-10
+  notes       String?
+  type        WorkoutType
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RaceResult {
+  id          String   @id @default(cuid())
+  userId      String
+  raceName    String
+  date        DateTime
+  distance    Float // in km
+  time        String // format: "HH:MM:SS"
+  pace        String? // format: "MM:SS"
+  position    Int?
+  category    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AnthropometricData {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  weight    Float? // in kg
+  height    Float? // in cm
+  bodyFat   Float? // percentage
+  muscleMass Float? // in kg
+  bmi       Float?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+
+model Payment {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int // in cents
+  currency  String @default("eur")
+  status    PaymentStatus @default(PENDING)
+  stripePaymentIntentId String?
+  plan      SubscriptionPlan
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  ATHLETE
+  COACH
+  PROFESSIONAL
+  ADMIN
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum WorkoutType {
+  RUNNING
+  CYCLING
+  SWIMMING
+  STRENGTH
+  CARDIO
+  FLEXIBILITY
+  SPORTS
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum ActivityType {
+  WORKOUT
+  THERAPY
+  NUTRITION
+  MENTAL
+  ASSESSMENT
+  CUSTOM
+}
+
+enum ActivityStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum ParticipantRole {
+  ADMIN
+  MEMBER
+}
+
+model Chat {
+  id          String   @id @default(cuid())
+  type        ChatType @default(DIRECT)
+  name        String?  // Per chat di gruppo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relazioni
+  participants ChatParticipant[]
+  messages     Message[]
+
+  @@map("chats")
+}
+
+model ChatParticipant {
+  id        String           @id @default(cuid())
+  chatId    String
+  userId    String
+  role      ParticipantRole @default(MEMBER)
+  joinedAt  DateTime         @default(now())
+
+  // Relazioni
+  chat      Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@map("chat_participants")
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  content   String        @db.Text
+  type      String        @default("text") // text, image, file
+  fileUrl   String?       // URL del file/immagine
+  fileName  String?       // Nome originale del file
+  fileSize  Int?          // Dimensione del file in bytes
+  status    MessageStatus @default(SENT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relazioni
+  chatId    String
+  senderId  String
+  chat      Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model ScheduledActivity {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  date        DateTime
+  time        String
+  duration    Int // in minutes
+  type        ActivityType
+  assignedBy  String? // ID of the professional who assigned it
+  assignedTo  String? // ID of the user it's assigned to
+  status      ActivityStatus @default(SCHEDULED)
+  tags        String? // JSON array as string
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedByUser User?       @relation("AssignedActivities", fields: [assignedBy], references: [id])
+  assignedToUser User?       @relation("ReceivedActivities", fields: [assignedTo], references: [id])
+
+  @@index([userId, date])
+  @@index([assignedBy])
+  @@index([assignedTo])
+}

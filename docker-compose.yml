@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: performia_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-performia}
+      MYSQL_USER: ${DB_USER:-performia_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-performia_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - performia_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: performia_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USER:-performia_user}
+      PMA_PASSWORD: ${DB_PASSWORD:-performia_pass}
+    ports:
+      - "8080:80"
+    depends_on:
+      - mariadb
+    networks:
+      - performia_network
+
+volumes:
+  mariadb_data:
+
+networks:
+  performia_network:
+    driver: bridge

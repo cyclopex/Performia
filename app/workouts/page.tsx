@@ -1,0 +1,356 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { redirect } from 'next/navigation'
+import { 
+  Plus, 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Target, 
+  Zap,
+  Edit,
+  Trash2,
+  Filter,
+  Search,
+  TrendingUp,
+  Activity
+} from 'lucide-react'
+import Navbar from '@/components/layout/Navbar'
+import Button from '@/components/ui/Button'
+
+interface Workout {
+  id: string
+  title: string
+  description?: string
+  date: string
+  duration: number
+  distance?: number
+  calories?: number
+  rpe?: number
+  notes?: string
+  type: 'RUNNING' | 'CYCLING' | 'SWIMMING' | 'STRENGTH' | 'CARDIO' | 'FLEXIBILITY' | 'SPORTS' | 'OTHER'
+}
+
+// Mock data
+const mockWorkouts: Workout[] = [
+  {
+    id: '1',
+    title: 'Corsa mattutina',
+    description: 'Corsa leggera per riscaldamento',
+    date: '2024-01-15T07:00:00Z',
+    duration: 45,
+    distance: 8.5,
+    calories: 450,
+    rpe: 7,
+    type: 'RUNNING',
+    notes: 'Giornata fresca, buona performance'
+  },
+  {
+    id: '2',
+    title: 'Allenamento forza',
+    description: 'Upper body + core',
+    date: '2024-01-14T18:00:00Z',
+    duration: 60,
+    calories: 380,
+    rpe: 8,
+    type: 'STRENGTH',
+    notes: 'Aumentato carico su panca piana'
+  },
+  {
+    id: '3',
+    title: 'Nuoto tecnico',
+    description: 'Focalizzato su stile libero',
+    date: '2024-01-13T16:00:00Z',
+    duration: 30,
+    distance: 1.5,
+    calories: 200,
+    rpe: 6,
+    type: 'SWIMMING',
+    notes: 'Migliorata efficienza bracciata'
+  },
+  {
+    id: '4',
+    title: 'Bike indoor',
+    description: 'HIIT session',
+    date: '2024-01-12T19:00:00Z',
+    duration: 40,
+    distance: 15.2,
+    calories: 520,
+    rpe: 9,
+    type: 'CYCLING',
+    notes: 'Intervalli 30s/30s molto intensi'
+  }
+]
+
+export default function WorkoutsPage() {
+  const { data: session, status } = useSession()
+  const [workouts, setWorkouts] = useState<Workout[]>(mockWorkouts)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterType, setFilterType] = useState('ALL')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null)
+
+  // Redirect se non autenticato
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500"></div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    redirect('/auth/login')
+  }
+
+  const filteredWorkouts = workouts.filter(workout => {
+    const matchesSearch = workout.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         workout.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesType = filterType === 'ALL' || workout.type === filterType
+    return matchesSearch && matchesType
+  })
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'RUNNING': return <TrendingUp className="w-4 h-4" />
+      case 'CYCLING': return <Activity className="w-4 h-4" />
+      case 'SWIMMING': return <Activity className="w-4 h-4" />
+      case 'STRENGTH': return <Target className="w-4 h-4" />
+      case 'CARDIO': return <Zap className="w-4 h-4" />
+      case 'FLEXIBILITY': return <Activity className="w-4 h-4" />
+      case 'SPORTS': return <Target className="w-4 h-4" />
+      default: return <Activity className="w-4 h-4" />
+    }
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'RUNNING': return 'text-blue-600 bg-blue-50'
+      case 'CYCLING': return 'text-green-600 bg-green-50'
+      case 'SWIMMING': return 'text-cyan-600 bg-cyan-50'
+      case 'STRENGTH': return 'text-red-600 bg-red-50'
+      case 'CARDIO': return 'text-purple-600 bg-purple-50'
+      case 'FLEXIBILITY': return 'text-yellow-600 bg-yellow-50'
+      case 'SPORTS': return 'text-orange-600 bg-orange-50'
+      default: return 'text-gray-600 bg-gray-50'
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('it-IT', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('it-IT', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const handleDeleteWorkout = (workoutId: string) => {
+    if (confirm('Sei sicuro di voler eliminare questo allenamento?')) {
+      setWorkouts(workouts.filter(w => w.id !== workoutId))
+    }
+  }
+
+  const totalWorkouts = workouts.length
+  const totalDuration = workouts.reduce((sum, w) => sum + w.duration, 0)
+  const totalDistance = workouts.reduce((sum, w) => sum + (w.distance || 0), 0)
+  const avgRPE = workouts.length > 0 
+    ? workouts.reduce((sum, w) => sum + (w.rpe || 0), 0) / workouts.length 
+    : 0
+
+  return (
+    <div className="min-h-screen gradient-bg">
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Allenamenti
+            </h1>
+            <p className="text-gray-600">
+              Traccia i tuoi allenamenti e monitora i progressi
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowAddForm(true)}
+            className="mt-4 sm:mt-0"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Aggiungi Allenamento
+          </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="card-hover">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-sport rounded-xl flex items-center justify-center mr-4">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Allenamenti Totali</p>
+                <p className="text-2xl font-bold text-gray-900">{totalWorkouts}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-hover">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-sport rounded-xl flex items-center justify-center mr-4">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Ore Totali</p>
+                <p className="text-2xl font-bold text-gray-900">{Math.round(totalDuration / 60)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-hover">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-sport rounded-xl flex items-center justify-center mr-4">
+                <MapPin className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Distanza Totale</p>
+                <p className="text-2xl font-bold text-gray-900">{totalDistance.toFixed(1)} km</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-hover">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-sport rounded-xl flex items-center justify-center mr-4">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">RPE Medio</p>
+                <p className="text-2xl font-bold text-gray-900">{avgRPE.toFixed(1)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Cerca allenamenti..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field pl-10"
+            />
+          </div>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="input-field"
+          >
+            <option value="ALL">Tutti i tipi</option>
+            <option value="RUNNING">Running</option>
+            <option value="CYCLING">Cycling</option>
+            <option value="SWIMMING">Swimming</option>
+            <option value="STRENGTH">Strength</option>
+            <option value="CARDIO">Cardio</option>
+            <option value="FLEXIBILITY">Flexibility</option>
+            <option value="SPORTS">Sports</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        {/* Workouts List */}
+        <div className="space-y-4">
+          {filteredWorkouts.length === 0 ? (
+            <div className="text-center py-12">
+              <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nessun allenamento trovato</h3>
+              <p className="text-gray-600">
+                {searchTerm || filterType !== 'ALL' 
+                  ? 'Prova a modificare i filtri di ricerca.'
+                  : 'Inizia ad aggiungere i tuoi primi allenamenti!'
+                }
+              </p>
+            </div>
+          ) : (
+            filteredWorkouts.map((workout) => (
+              <div key={workout.id} className="card-hover">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{workout.title}</h3>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(workout.type)}`}>
+                        {getTypeIcon(workout.type)}
+                        <span className="ml-1">{workout.type}</span>
+                      </span>
+                    </div>
+                    
+                    {workout.description && (
+                      <p className="text-gray-600 mb-3">{workout.description}</p>
+                    )}
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {formatDate(workout.date)}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock className="w-4 h-4 mr-2" />
+                        {workout.duration} min
+                      </div>
+                      {workout.distance && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {workout.distance} km
+                        </div>
+                      )}
+                      {workout.rpe && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Target className="w-4 h-4 mr-2" />
+                          RPE {workout.rpe}/10
+                        </div>
+                      )}
+                    </div>
+                    
+                    {workout.notes && (
+                      <p className="text-sm text-gray-500 italic">"{workout.notes}"</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex space-x-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingWorkout(workout)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteWorkout(workout.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
