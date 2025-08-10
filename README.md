@@ -62,6 +62,88 @@ Siamo sempre aperti a contributi! Vedi i README specifici di ogni progetto per d
 - **Discussions**: Per domande e supporto
 - **Email**: [cyclopex@gmail.com](mailto:cyclopex@gmail.com)
 
+🏆 Performia - Sports Performance Platform
+Performia is a complete ecosystem for managing and optimizing sports performance, designed for athletes, coaches, and industry professionals.
+
+📁 Included Projects
+🏃‍♂️ Performia - Sports Management Platform
+Performia is the main application providing:
+
+Complete dashboard for performance monitoring
+
+Training and workout program management
+
+Connection system between athletes and coaches
+
+Anthropometric data and progress tracking
+
+Integrated chat for communication
+
+Competition and results management
+
+Technologies: Next.js 14, React 18, TypeScript, Tailwind CSS, Prisma ORM
+
+🔧 [Other Projects in Development]
+Performia Analytics – Advanced analytics and machine learning
+
+Performia Mobile – Native mobile app
+
+Performia API – Public APIs for third-party developers
+
+🚀 Quick Start
+To get started with Performia:
+
+bash
+Copia
+Modifica
+npm install
+cp env.example .env.local
+# Configure environment variables
+npm run dev
+To contribute to the project:
+
+Fork the repository
+
+Create a branch for your feature
+
+Develop and test
+
+Open a Pull Request
+
+🎯 Vision
+Performia aims to become the go-to platform for:
+
+Athletes: Performance optimization and progress tracking
+
+Coaches: Team and training program management
+
+Professionals: Data analysis and sports consulting
+
+Organizations: Event and competition management
+
+📊 Roadmap
+Phase 1: Core platform (Performia) ✅
+
+Phase 2: Advanced analytics and ML
+
+Phase 3: Native mobile app
+
+Phase 4: Public APIs and integrations
+
+Phase 5: Enterprise platform
+
+🤝 Contribute
+We’re always open to contributions! Check the specific README for each project to learn how to get involved.
+
+📞 Contacts
+GitHub Issues: For bugs and feature requests
+
+Discussions: For questions and support
+
+Email: cyclopex@gmail.com
+
+Performia – Take your sports performance to the next level! 🚀
+
 ---
 
 **Performia** - Eleva le tue performance sportive al livello successivo! 🚀
