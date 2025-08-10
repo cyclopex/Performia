@@ -4,7 +4,7 @@
 
 ## 📁 Progetti Inclusi
 
-### 🏃‍♂️ [Atletic](./app/) - Piattaforma di Gestione Sportiva
+### 🏃‍♂️ [Performia](./app/) - Piattaforma di Gestione Sportiva
 **Atletic** è l'applicazione principale che fornisce:
 - Dashboard completa per monitoraggio performance
 - Gestione allenamenti e programmi di training
@@ -60,7 +60,7 @@ Siamo sempre aperti a contributi! Vedi i README specifici di ogni progetto per d
 
 - **GitHub Issues**: Per bug e feature requests
 - **Discussions**: Per domande e supporto
-- **Email**: [team@performia.com](mailto:team@performia.com)
+- **Email**: [cyclopex@gmail.com](mailto:cyclopex@gmail.com)
 
 ---
 
