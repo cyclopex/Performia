@@ -80,7 +80,7 @@ export const authOptions = {
     strategy: 'jwt' as const
   },
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user?: any }) {
+    async jwt({ token, user }: { token: JWT; user?: { id: string; role: string; isApproved: boolean; isActive: boolean } }) {
       if (user) {
         token.id = user.id
         token.role = user.role

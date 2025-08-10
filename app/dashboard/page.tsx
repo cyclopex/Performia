@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { 
   ChevronLeft, 
@@ -9,23 +9,18 @@ import {
   Plus, 
   Calendar, 
   Clock, 
-  User,
   Target,
   Activity,
-  Zap,
   Heart,
   Utensils,
   Stethoscope,
   Trophy,
   Edit,
   Trash2,
-  Filter,
   Search,
   TrendingUp,
   MapPin,
   BarChart3,
-  PieChart,
-  LineChart as LineChartIcon,
   List
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
@@ -143,17 +138,100 @@ export default function DashboardPage() {
   // Nuovi stati per la gestione completa
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [raceResults, setRaceResults] = useState<RaceResult[]>([])
-  const [anthropometricData, setAnthropometricData] = useState<AnthropometricData[]>([])
   const [showAddWorkout, setShowAddWorkout] = useState(false)
   const [showAddRace, setShowAddRace] = useState(false)
   const [showAddAnthropometric, setShowAddAnthropometric] = useState(false)
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null)
-  const [editingRace, setEditingRace] = useState<RaceResult | null>(null)
-  const [editingAnthropometric, setEditingAnthropometric] = useState<AnthropometricData | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('ALL')
   const [filterStatus, setFilterStatus] = useState('ALL')
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'stats'>('calendar')
+
+  // Carica le attività dal database
+  const loadActivities = useCallback(async () => {
+    if (!session?.user?.id) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch('/api/activities')
+      if (response.ok) {
+        const data = await response.json()
+        setScheduledActivities(data)
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento delle attività:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [session?.user?.id])
+
+  // Carica gli allenamenti dal database
+  const loadWorkouts = useCallback(async () => {
+    if (!session?.user?.id) return
+    
+    try {
+      const response = await fetch('/api/workouts')
+      if (response.ok) {
+        const data = await response.json()
+        setWorkouts(data)
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento degli allenamenti:', error)
+    }
+  }, [session?.user?.id])
+
+  // Carica i risultati gara dal database
+  const loadRaceResults = useCallback(async () => {
+    if (!session?.user?.id) return
+    
+    try {
+      const response = await fetch('/api/race-results')
+      if (response.ok) {
+        const data = await response.json()
+        setRaceResults(data)
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dei risultati gara:', error)
+    }
+  }, [session?.user?.id])
+
+  // Calcola le statistiche per i KPI
+  const workoutStats = useMemo(() => {
+    const total = workouts.length
+    const completed = workouts.filter(w => w.status === 'COMPLETED').length
+    const planned = workouts.filter(w => w.status === 'PLANNED').length
+    const cancelled = workouts.filter(w => w.status === 'CANCELLED').length
+    
+    return { total, completed, planned, cancelled }
+  }, [workouts])
+
+  const raceStats = useMemo(() => {
+    const total = raceResults.length
+    const completed = raceResults.filter(r => r.time).length
+    
+    return { total, completed }
+  }, [raceResults])
+
+  // Filtra gli allenamenti per la vista lista
+  const filteredWorkouts = useMemo(() => {
+    return workouts.filter(workout => {
+      const matchesSearch = workout.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (workout.description && workout.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      const matchesType = filterType === 'ALL' || workout.type === filterType
+      const matchesStatus = filterStatus === 'ALL' || workout.status === filterStatus
+      
+      return matchesSearch && matchesType && matchesStatus
+    })
+  }, [workouts, searchTerm, filterType, filterStatus])
+
+  // Carica tutti i dati all'avvio
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadActivities()
+      loadWorkouts()
+      loadRaceResults()
+    }
+  }, [session?.user?.id, loadActivities, loadWorkouts, loadRaceResults])
 
   // Redirect se non autenticato
   if (status === 'loading') {
@@ -282,87 +360,31 @@ export default function DashboardPage() {
     }
   }
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('it-IT', { 
-      day: '2-digit', 
-      month: 'short' 
-    })
-  }
+
 
   const formatTime = (time: string) => {
+    if (!time) return ''
+    
+    // Se è già nel formato HH:MM, lo restituisce così com'è
+    if (/^\d{1,2}:\d{2}$/.test(time)) {
+      return time
+    }
+    
+    // Se è nel formato HH:MM:SS, rimuove i secondi
+    if (/^\d{1,2}:\d{2}:\d{2}$/.test(time)) {
+      return time.substring(0, 5)
+    }
+    
+    // Se è un numero (minuti), lo converte in formato HH:MM
+    const minutes = parseInt(time)
+    if (!isNaN(minutes)) {
+      const hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+    }
+    
     return time
   }
-
-  // Carica le attività dal database
-  const loadActivities = useCallback(async () => {
-    if (!session?.user?.id) return
-    
-    setLoading(true)
-    try {
-      const response = await fetch('/api/activities')
-      if (response.ok) {
-        const data = await response.json()
-        setScheduledActivities(data)
-      }
-    } catch (error) {
-      console.error('Errore nel caricamento delle attività:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id])
-
-  // Carica gli allenamenti dal database
-  const loadWorkouts = useCallback(async () => {
-    if (!session?.user?.id) return
-    
-    try {
-      const response = await fetch('/api/workouts')
-      if (response.ok) {
-        const data = await response.json()
-        setWorkouts(data)
-      }
-    } catch (error) {
-      console.error('Errore nel caricamento degli allenamenti:', error)
-    }
-  }, [session?.user?.id])
-
-  // Carica i risultati gara dal database
-  const loadRaceResults = useCallback(async () => {
-    if (!session?.user?.id) return
-    
-    try {
-      const response = await fetch('/api/race-results')
-      if (response.ok) {
-        const data = await response.json()
-        setRaceResults(data)
-      }
-    } catch (error) {
-      console.error('Errore nel caricamento dei risultati gara:', error)
-    }
-  }, [session?.user?.id])
-
-  // Carica i dati antropometrici dal database
-  const loadAnthropometricData = useCallback(async () => {
-    if (!session?.user?.id) return
-    
-    try {
-      const response = await fetch('/api/anthropometric')
-      if (response.ok) {
-        const data = await response.json()
-        setAnthropometricData(data)
-      }
-    } catch (error) {
-      console.error('Errore nel caricamento dei dati antropometrici:', error)
-    }
-  }, [session?.user?.id])
-
-  // Carica tutti i dati all'avvio
-  useEffect(() => {
-    loadActivities()
-    loadWorkouts()
-    loadRaceResults()
-    loadAnthropometricData()
-  }, [loadActivities, loadWorkouts, loadRaceResults, loadAnthropometricData])
 
   // Gestione attività
   const handleEditActivity = async (updatedActivity: ScheduledActivity) => {
@@ -428,24 +450,6 @@ export default function DashboardPage() {
     }
   }
 
-  const handleEditWorkout = async (updatedWorkout: Workout) => {
-    try {
-      const response = await fetch(`/api/workouts/${updatedWorkout.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedWorkout)
-      })
-
-      if (response.ok) {
-        await loadWorkouts()
-        setShowEditActivity(false)
-        setEditingWorkout(null)
-      }
-    } catch (error) {
-      console.error('Errore nella modifica dell\'allenamento:', error)
-    }
-  }
-
   const handleDeleteWorkout = async (workoutId: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo allenamento?')) return
     
@@ -488,55 +492,32 @@ export default function DashboardPage() {
   // Gestione dati antropometrici
   const handleAddAnthropometric = async (newData: Omit<AnthropometricData, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const data = {
-        ...newData,
-        userId: session.user.id
-      }
-      
       const response = await fetch('/api/anthropometric', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...newData,
+          userId: session?.user?.id
+        })
       })
-
+      
       if (response.ok) {
-        await loadAnthropometricData()
+        // Ricarica i dati per aggiornare i grafici
+        // In una implementazione completa, qui si aggiornerebbe lo stato locale
+        console.log('Dati antropometrici aggiunti con successo')
         setShowAddAnthropometric(false)
+      } else {
+        console.error('Errore nell\'aggiunta dei dati antropometrici')
       }
     } catch (error) {
-      console.error('Errore nel salvataggio dei dati antropometrici:', error)
+      console.error('Errore nell\'aggiunta dei dati antropometrici:', error)
     }
   }
 
-  // Filtri e ricerca
-  const filteredWorkouts = workouts.filter(workout => {
-    const matchesSearch = workout.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         workout.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === 'ALL' || workout.type === filterType
-    const matchesStatus = filterStatus === 'ALL' || workout.status === filterStatus
-    
-    return matchesSearch && matchesType && matchesStatus
-  })
 
-  // Statistiche aggregate
-  const workoutStats = {
-    total: workouts.length,
-    completed: workouts.filter(w => w.status === 'COMPLETED').length,
-    planned: workouts.filter(w => w.status === 'PLANNED').length,
-    cancelled: workouts.filter(w => w.status === 'CANCELLED').length,
-    byType: workouts.reduce((acc, workout) => {
-      acc[workout.type] = (acc[workout.type] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-  }
 
-  const raceStats = {
-    total: raceResults.length,
-    byType: raceResults.reduce((acc, race) => {
-      acc[race.eventType] = (acc[race.eventType] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-  }
+
+
 
   // Navigazione settimanale
   const goToPreviousWeek = () => {
@@ -619,10 +600,7 @@ export default function DashboardPage() {
                 <Trophy className="w-4 h-4 mr-2" />
                 Gara
               </Button>
-              <Button onClick={() => setShowAddAnthropometric(true)} variant="secondary">
-                <Target className="w-4 h-4 mr-2" />
-                Dati
-              </Button>
+
             </div>
           </div>
         </div>
@@ -719,37 +697,43 @@ export default function DashboardPage() {
                       </div>
                       
                       <div className="space-y-1">
-                        {dayActivities.map((activity, activityIndex) => (
-                          <div
-                            key={activityIndex}
-                            className={`p-2 rounded text-xs border ${getActivityColor(getActivityType(activity))} cursor-pointer hover:opacity-80 transition-opacity`}
-                            onClick={() => {
-                              if ('duration' in activity && 'type' in activity && 'status' in activity) {
-                                // È un Workout
-                                setEditingWorkout(activity as Workout)
-                                setShowEditActivity(true)
-                              } else if ('title' in activity && 'type' in activity && 'status' in activity && 'duration' in activity) {
-                                // È una ScheduledActivity
-                                openEditModal(activity as ScheduledActivity)
-                              } else if ('eventName' in activity && 'eventType' in activity) {
-                                // È un RaceResult - non modificabile, solo visualizzabile
-                                console.log('RaceResult non modificabile:', activity)
-                              }
-                            }}
-                          >
-                            <div className="flex items-center space-x-1">
-                              {getActivityIcon(getActivityType(activity))}
-                              <span className="font-medium truncate">
-                                {getActivityTitle(activity)}
-                              </span>
-                            </div>
-                            {('time' in activity && activity.time) && (
-                              <div className="text-xs opacity-75 mt-1">
-                                {formatTime(activity.time)}
+                        {dayActivities.length > 0 ? (
+                          dayActivities.map((activity, activityIndex) => (
+                            <div
+                              key={activityIndex}
+                              className={`p-2 rounded text-xs border ${getActivityColor(getActivityType(activity))} cursor-pointer hover:opacity-80 transition-opacity`}
+                              onClick={() => {
+                                if ('duration' in activity && 'type' in activity && 'status' in activity && !('time' in activity)) {
+                                  // È un Workout
+                                  setEditingWorkout(activity as Workout)
+                                  setShowEditActivity(true)
+                                } else if ('title' in activity && 'type' in activity && 'status' in activity && 'time' in activity) {
+                                  // È una ScheduledActivity
+                                  openEditModal(activity as ScheduledActivity)
+                                } else if ('eventName' in activity && 'eventType' in activity) {
+                                  // È un RaceResult - non modificabile, solo visualizzabile
+                                  console.log('RaceResult non modificabile:', activity)
+                                }
+                              }}
+                            >
+                              <div className="flex items-center space-x-1">
+                                {getActivityIcon(getActivityType(activity))}
+                                <span className="font-medium truncate">
+                                  {getActivityTitle(activity)}
+                                </span>
                               </div>
-                            )}
+                              {('time' in activity && activity.time) && (
+                                <div className="text-xs opacity-75 mt-1">
+                                  {formatTime(activity.time)}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-400 text-center py-2">
+                            Nessuna attività
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   )
