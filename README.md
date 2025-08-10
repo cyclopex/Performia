@@ -1,157 +1,67 @@
-# 🏃‍♂️ Atletic - Piattaforma di Gestione Sportiva
+# 🏆 Performia - Piattaforma di Performance Sportiva
 
-**Atletic** è un'applicazione web moderna per la gestione completa delle attività sportive, allenamenti e connessioni tra atleti e coach.
+**Performia** è un ecosistema completo per la gestione e ottimizzazione delle performance sportive, progettato per atleti, coach e professionisti del settore.
 
-## ✨ Caratteristiche Principali
+## 📁 Progetti Inclusi
 
-### 🎯 Dashboard Completa
-- **Panoramica Performance**: Visualizzazione grafici e statistiche personali
-- **Calendario Attività**: Pianificazione e gestione allenamenti
-- **Metriche Antropometriche**: Monitoraggio progressi fisici
-- **Sistema di Connessioni**: Networking tra atleti e coach
+### 🏃‍♂️ [Atletic](./app/) - Piattaforma di Gestione Sportiva
+**Atletic** è l'applicazione principale che fornisce:
+- Dashboard completa per monitoraggio performance
+- Gestione allenamenti e programmi di training
+- Sistema di connessioni tra atleti e coach
+- Tracking dati antropometrici e progressi
+- Chat integrata per comunicazione
+- Sistema gare e risultati competitivi
 
-### 🏋️‍♂️ Gestione Allenamenti
-- **Pianificazione**: Creazione programmi di allenamento personalizzati
-- **Tracking**: Monitoraggio durata, distanza, calorie e RPE
-- **Tipologie**: Supporto per running, cycling, swimming, strength training
-- **Stato**: Gestione allenamenti pianificati, completati o cancellati
+**Tecnologie**: Next.js 14, React 18, TypeScript, Tailwind CSS, Prisma ORM
 
-### 🏆 Sistema Gare
-- **Registrazione Risultati**: Tracking performance competitive
-- **Tipologie Eventi**: Race, competition, time trial, fun run
-- **Statistiche**: Posizionamento e confronto con altri partecipanti
-- **Note Personali**: Documentazione esperienze competitive
+### 🔧 [Altri Progetti in Sviluppo]
+- **Performia Analytics** - Analisi avanzate e machine learning
+- **Performia Mobile** - App mobile nativa
+- **Performia API** - API pubbliche per sviluppatori terzi
 
-### 📊 Dati Antropometrici
-- **Monitoraggio Fisico**: Peso, massa muscolare, grasso corporeo
-- **Misure**: Torace, vita, fianchi, braccia, gambe
-- **BMI**: Calcolo automatico indice massa corporea
-- **Trend**: Visualizzazione progressi nel tempo
+## 🚀 Quick Start
 
-### 💬 Sistema Chat
-- **Comunicazione Diretta**: Chat private tra utenti
-- **Gestione Connessioni**: Richieste e accettazioni
-- **Ricerca Utenti**: Trovare e connettersi con altri atleti
-- **Supporto File**: Condivisione immagini e documenti
-
-## 🚀 Tecnologie Utilizzate
-
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: Prisma ORM con database relazionale
-- **Autenticazione**: NextAuth.js
-- **Icons**: Lucide React
-- **Deployment**: Docker, VPS
-
-## 📋 Prerequisiti
-
-- Node.js 18+ 
-- npm o yarn
-- Database (PostgreSQL/MySQL)
-- Docker (opzionale per deployment)
-
-## 🛠️ Installazione
-
-### 1. Clona il Repository
-```bash
-git clone <repository-url>
-cd Atletic
-```
-
-### 2. Installa Dipendenze
+### Per iniziare con Atletic:
 ```bash
 npm install
-```
-
-### 3. Configurazione Ambiente
-```bash
 cp env.example .env.local
-# Modifica .env.local con le tue configurazioni
-```
-
-### 4. Setup Database
-```bash
-npx prisma generate
-npx prisma db push
-```
-
-### 5. Avvia l'Applicazione
-```bash
+# Configura le variabili d'ambiente
 npm run dev
 ```
 
-L'applicazione sarà disponibile su `http://localhost:3000`
+### Per contribuire al progetto:
+1. Fork del repository
+2. Crea un branch per la feature
+3. Sviluppa e testa
+4. Crea una Pull Request
 
-## 🔧 Script Disponibili
+## 🎯 Visione
 
-- `npm run dev` - Avvia server di sviluppo
-- `npm run build` - Build per produzione
-- `npm run start` - Avvia server di produzione
-- `npm run lint` - Controllo codice
-- `npm run type-check` - Verifica TypeScript
+**Performia** aspira a diventare la piattaforma di riferimento per:
+- **Atleti**: Ottimizzazione performance e tracking progressi
+- **Coach**: Gestione squadre e programmi di allenamento
+- **Professionisti**: Analisi dati e consulenza sportiva
+- **Organizzazioni**: Gestione eventi e competizioni
 
-## 📁 Struttura Progetto
+## 📊 Roadmap
 
-```
-Atletic/
-├── app/                    # App Router Next.js
-│   ├── api/               # API Routes
-│   ├── auth/              # Pagine autenticazione
-│   ├── dashboard/         # Dashboard principale
-│   ├── workouts/          # Gestione allenamenti
-│   └── chat/              # Sistema chat
-├── components/            # Componenti React riutilizzabili
-│   ├── ui/               # Componenti UI base
-│   ├── layout/           # Componenti layout
-│   └── modals/           # Modali applicazione
-├── lib/                   # Utility e configurazioni
-├── prisma/               # Schema database
-├── types/                # Definizioni TypeScript
-└── public/               # Asset statici
-```
-
-## 🔐 Autenticazione
-
-L'applicazione supporta diversi ruoli:
-- **ADMIN**: Accesso completo a tutte le funzionalità
-- **COACH**: Gestione atleti e programmi di allenamento
-- **USER**: Atleta con accesso alle proprie attività
-
-## 🚢 Deployment
-
-### VPS con Docker
-```bash
-# Build e deploy
-./deploy-vps.sh
-
-# Oppure manualmente
-docker-compose up -d
-```
-
-### Vercel
-```bash
-npm run build
-vercel --prod
-```
+- [x] **Fase 1**: Core platform (Atletic) ✅
+- [ ] **Fase 2**: Analytics avanzate e ML
+- [ ] **Fase 3**: App mobile nativa
+- [ ] **Fase 4**: API pubbliche e integrazioni
+- [ ] **Fase 5**: Piattaforma enterprise
 
 ## 🤝 Contribuire
 
-1. Fork del repository
-2. Crea un branch per la feature (`git checkout -b feature/nuova-feature`)
-3. Commit delle modifiche (`git commit -am 'Aggiunge nuova feature'`)
-4. Push del branch (`git push origin feature/nuova-feature`)
-5. Crea una Pull Request
+Siamo sempre aperti a contributi! Vedi i README specifici di ogni progetto per dettagli su come contribuire.
 
-## 📝 Licenza
+## 📞 Contatti
 
-Questo progetto è sotto licenza MIT. Vedi il file `LICENSE` per i dettagli.
-
-## 📞 Supporto
-
-Per supporto o domande:
-- Apri una issue su GitHub
-- Contatta il team di sviluppo
+- **GitHub Issues**: Per bug e feature requests
+- **Discussions**: Per domande e supporto
+- **Email**: [team@performia.com](mailto:team@performia.com)
 
 ---
 
-**Atletic** - Trasforma la tua passione sportiva in risultati concreti! 🎯 
+**Performia** - Eleva le tue performance sportive al livello successivo! 🚀
