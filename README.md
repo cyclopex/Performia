@@ -5,7 +5,7 @@
 ## 📁 Progetti Inclusi
 
 ### 🏃‍♂️ [Performia](./app/) - Piattaforma di Gestione Sportiva
-**Atletic** è l'applicazione principale che fornisce:
+**Performia<->** è l'applicazione principale che fornisce:
 - Dashboard completa per monitoraggio performance
 - Gestione allenamenti e programmi di training
 - Sistema di connessioni tra atleti e coach
