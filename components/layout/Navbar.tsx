@@ -156,6 +156,7 @@ export default function Navbar() {
           {/* User Menu */}
           {session && (
             <div className="hidden md:flex items-center space-x-4">
+              
               <div className="relative" ref={dropdownRef}>
                 <button 
                   onClick={toggleDropdown}
@@ -219,6 +220,7 @@ export default function Navbar() {
           <div className="md:hidden py-4 border-t border-gray-100">
             {session ? (
               <div className="space-y-4">
+                
                 <Link href="/dashboard" className="block text-gray-700 hover:text-primary-600 transition-colors">
                   Dashboard
                 </Link>

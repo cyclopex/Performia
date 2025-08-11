@@ -167,21 +167,21 @@ export default function ConnessioniPage() {
   const sentRequests = connections.filter(c => c.status === 'PENDING' && c.isInitiator)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Connessioni</h1>
-          <p className="text-gray-600">Gestisci le tue connessioni e trova nuovi contatti</p>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Connessioni</h1>
+          <p className="text-gray-600 dark:text-gray-400">Gestisci le tue connessioni e trova nuovi contatti</p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-1 bg-white rounded-lg p-1 mb-6 shadow-sm">
+        <div className="flex space-x-1 bg-white dark:bg-gray-700 rounded-lg p-1 mb-6 shadow-sm">
           <button
             onClick={() => setActiveTab('connections')}
             className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
               activeTab === 'connections'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
             }`}
           >
             Le Mie Connessioni
@@ -191,7 +191,7 @@ export default function ConnessioniPage() {
             className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
               activeTab === 'search'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
             }`}
           >
             Cerca Utenti

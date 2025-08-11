@@ -175,10 +175,10 @@ export default function WorkoutsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Allenamenti
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Traccia i tuoi allenamenti e monitora i progressi
             </p>
           </div>
@@ -199,8 +199,8 @@ export default function WorkoutsPage() {
                 <Activity className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Allenamenti Totali</p>
-                <p className="text-2xl font-bold text-gray-900">{totalWorkouts}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Allenamenti Totali</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalWorkouts}</p>
               </div>
             </div>
           </div>
@@ -211,8 +211,8 @@ export default function WorkoutsPage() {
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Ore Totali</p>
-                <p className="text-2xl font-bold text-gray-900">{Math.round(totalDuration / 60)}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Ore Totali</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Math.round(totalDuration / 60)}</p>
               </div>
             </div>
           </div>
@@ -223,8 +223,8 @@ export default function WorkoutsPage() {
                 <MapPin className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Distanza Totale</p>
-                <p className="text-2xl font-bold text-gray-900">{totalDistance.toFixed(1)} km</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Distanza Totale</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalDistance.toFixed(1)} km</p>
               </div>
             </div>
           </div>
@@ -235,8 +235,8 @@ export default function WorkoutsPage() {
                 <Target className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">RPE Medio</p>
-                <p className="text-2xl font-bold text-gray-900">{avgRPE.toFixed(1)}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">RPE Medio</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avgRPE.toFixed(1)}</p>
               </div>
             </div>
           </div>

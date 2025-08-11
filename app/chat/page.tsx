@@ -223,13 +223,13 @@ export default function ChatPage() {
 
 
   return (
-    <div className="h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex">
       {/* Sidebar - Lista Chat */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold text-gray-800">Chat</h1>
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Chat</h1>
             <button
               onClick={() => setShowUserSearch(true)}
               className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -246,7 +246,7 @@ export default function ChatPage() {
               placeholder="Cerca chat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function ChatPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
           ) : filteredChats.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
               {searchQuery ? 'Nessuna chat trovata' : 'Nessuna chat disponibile'}
             </div>
           ) : (
@@ -266,8 +266,8 @@ export default function ChatPage() {
               <div
                 key={chat.id}
                 onClick={() => setSelectedChat(chat)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedChat?.id === chat.id ? 'bg-blue-50 border-blue-200' : ''
+                className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                  selectedChat?.id === chat.id ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : ''
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -286,20 +286,20 @@ export default function ChatPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-800 truncate">{chat.name}</h3>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-100 truncate">{chat.name}</h3>
                       {chat.lastMessage && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatTime(chat.lastMessage.createdAt)}
                         </span>
                       )}
                     </div>
                     {chat.lastMessage ? (
-                      <p className="text-sm text-gray-600 truncate">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                         {chat.lastMessage.sender.id === session?.user?.id ? 'Tu: ' : ''}
                         {chat.lastMessage.content}
                       </p>
                     ) : (
-                      <p className="text-sm text-gray-500">Nessun messaggio</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Nessun messaggio</p>
                     )}
                   </div>
                   {chat.unreadCount > 0 && (
