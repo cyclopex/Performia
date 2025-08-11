@@ -3,13 +3,19 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, User, LogOut, Settings, BarChart3 } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings, BarChart3, Clock, Plus, Calendar, Dumbbell } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import ProposalsPanel from '@/components/ProposalsPanel'
+import CreateProposalModal from '@/components/CreateProposalModal'
 
 export default function Navbar() {
   const { data: session } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [showProposals, setShowProposals] = useState(false)
+  const [showCreateProposal, setShowCreateProposal] = useState(false)
+  const [proposalType, setProposalType] = useState<'activity' | 'workout'>('activity')
+  const [showProposalDropdown, setShowProposalDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleSignOut = () => {
@@ -24,8 +30,19 @@ export default function Navbar() {
       }
     }
 
+    const handleClickOutsideProposal = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.proposal-dropdown')) {
+        setShowProposalDropdown(false)
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutsideProposal)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('mousedown', handleClickOutsideProposal)
+    }
   }, [])
 
   // Chiudi menu mobile quando si cambia route
@@ -66,6 +83,63 @@ export default function Navbar() {
                 <Link href="/chat" className="text-gray-700 hover:text-primary-600 transition-colors">
                   Chat
                 </Link>
+                {/* Pulsante Proposte per Atleti */}
+                {session.user?.role === 'ATHLETE' && (
+                  <button
+                    onClick={() => setShowProposals(true)}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Clock className="w-4 h-4" />
+                    Proposte
+                  </button>
+                )}
+                {/* Pulsanti per Coach/Professional/Admin */}
+                {['COACH', 'PROFESSIONAL', 'ADMIN'].includes(session.user?.role || '') && (
+                  <div className="flex items-center space-x-2">
+                    <div className="relative proposal-dropdown">
+                      <button
+                        onClick={() => setShowProposalDropdown(!showProposalDropdown)}
+                        className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Nuova Proposta
+                      </button>
+                      {showProposalDropdown && (
+                        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-[200px]">
+                          <button
+                            onClick={() => {
+                              setProposalType('activity')
+                              setShowCreateProposal(true)
+                              setShowProposalDropdown(false)
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-50 rounded-t-lg flex items-center gap-2"
+                          >
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            Proposta Attività
+                          </button>
+                          <button
+                            onClick={() => {
+                              setProposalType('workout')
+                              setShowCreateProposal(true)
+                              setShowProposalDropdown(false)
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-50 rounded-b-lg flex items-center gap-2"
+                          >
+                            <Dumbbell className="w-4 h-4 text-green-600" />
+                            Proposta Allenamento
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setShowProposals(true)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <Clock className="w-4 h-4" />
+                      Proposte
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -160,6 +234,41 @@ export default function Navbar() {
                 <Link href="/profile" className="block text-gray-700 hover:text-primary-600 transition-colors">
                   Profilo
                 </Link>
+                {/* Pulsante Proposte per Atleti */}
+                {session.user?.role === 'ATHLETE' && (
+                  <button
+                    onClick={() => {
+                      setShowProposals(true)
+                      setIsMenuOpen(false)
+                    }}
+                    className="block w-full text-left text-gray-700 hover:text-primary-600 transition-colors"
+                  >
+                    Proposte in Attesa
+                  </button>
+                )}
+                {/* Pulsanti per Coach/Professional/Admin */}
+                {['COACH', 'PROFESSIONAL', 'ADMIN'].includes(session.user?.role || '') && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowCreateProposal(true)
+                        setIsMenuOpen(false)
+                      }}
+                      className="block w-full text-left text-gray-700 hover:text-primary-600 transition-colors"
+                    >
+                      Nuova Proposta
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowProposals(true)
+                        setIsMenuOpen(false)
+                      }}
+                      className="block w-full text-left text-gray-700 hover:text-primary-600 transition-colors"
+                    >
+                      Proposte in Attesa
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="block w-full text-left text-gray-700 hover:text-primary-600 transition-colors"
@@ -180,6 +289,18 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      {/* Modali */}
+      <ProposalsPanel 
+        isOpen={showProposals} 
+        onClose={() => setShowProposals(false)} 
+      />
+      
+      <CreateProposalModal
+        isOpen={showCreateProposal}
+        onClose={() => setShowCreateProposal(false)}
+        proposalType={proposalType}
+      />
     </nav>
   )
 }

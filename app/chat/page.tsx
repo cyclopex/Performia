@@ -171,7 +171,7 @@ export default function ChatPage() {
   }
 
   // Invia un messaggio
-  const sendMessage = async (content: string, type: string, file?: File) => {
+  const sendMessage = async (content: string, type: string, ) => {
     if (!selectedChat || !session?.user?.id) return
 
     // TODO: Implementare upload file

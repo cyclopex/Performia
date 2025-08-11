@@ -32,7 +32,7 @@ export default function LoginPage() {
         toast.success('Accesso effettuato con successo!')
         router.push('/dashboard')
       }
-    } catch (error) {
+    } catch {
       toast.error('Errore durante l\'accesso')
     } finally {
       setIsLoading(false)

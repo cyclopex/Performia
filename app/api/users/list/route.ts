@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 
 // GET - Lista tutti gli utenti (solo per debug)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('🔐 Controllo autenticazione lista utenti...')
     const session = await getServerSession(authOptions)

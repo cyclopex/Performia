@@ -122,7 +122,7 @@ export default function MessageInput({ onSendMessage, disabled = false }: Messag
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Allega immagine"
           >
-            <Image className="w-5 h-5" />
+            <Image className="w-5 h-5" alt="Allega immagine" />
           </button>
           <button
             disabled={disabled}

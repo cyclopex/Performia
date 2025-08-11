@@ -79,6 +79,15 @@ model User {
   receivedActivities     ScheduledActivity[] @relation("ReceivedActivities")
   chatParticipants       ChatParticipant[]
   sentMessages           Message[]
+  
+  // Relazioni per il sistema di proposte
+  proposedActivities     ActivityProposal[] @relation("ProposedActivities")
+  receivedProposals      ActivityProposal[] @relation("ReceivedProposals")
+  proposedWorkouts       WorkoutProposal[] @relation("ProposedWorkouts")
+  receivedWorkoutProposals WorkoutProposal[] @relation("ReceivedWorkoutProposals")
+  
+  // Relazioni per attività assegnate
+  assignedWorkouts       Workout[] @relation("AssignedWorkouts")
 
   @@index([email])
   @@index([role])
@@ -104,6 +113,24 @@ model Profile {
   coverImage      String?  @db.Text
   isPublic        Boolean  @default(true)
   preferences     String?  @db.Text
+  
+  // NUOVI CAMPI SPORTIVI E FISICI
+  // Dati fisici
+  height          Float?   // in cm
+  weight          Float?   // in kg
+  gender          Gender?  // Sesso biologico
+  dominantHand    DominantHand? // Mano dominante
+  
+  // Dati sportivi
+  sports          String?  @db.Text // JSON array di sport praticati
+  sportLevel      SportLevel? // Livello sportivo
+  yearsExperience Int?     // Anni di esperienza
+  
+  // Preferenze sportive
+  sportGoals      SportGoal? // Obiettivi sportivi
+  trainingAvailability String? @db.Text // JSON array disponibilità
+  trainingFrequency String? @db.Text // Frequenza allenamento
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -167,11 +194,14 @@ model Workout {
   updatedAt    DateTime    @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedByUser User? @relation("AssignedWorkouts", fields: [assignedBy], references: [id])
+  assignedBy String?
 
   @@index([userId, date])
   @@index([type])
   @@index([date])
   @@index([isPublic])
+  @@index([assignedBy])
   @@map("workouts")
 }
 
@@ -369,6 +399,84 @@ model ScheduledActivity {
 }
 
 // ========================================
+// SISTEMA DI PROPOSTE E APPROVAZIONI
+// ========================================
+model ActivityProposal {
+  id          String         @id @default(cuid())
+  type        ProposalType
+  action      ProposalAction
+  status      ProposalStatus @default(PENDING_APPROVAL)
+  
+  // Dati dell'attività proposta
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  activityType ActivityType
+  startTime   DateTime?
+  endTime     DateTime?
+  location    String?        @db.VarChar(255)
+  notes       String?        @db.Text
+  
+  // Relazioni
+  proposedBy  User   @relation("ProposedActivities", fields: [proposedById], references: [id], onDelete: Cascade)
+  proposedById String
+  proposedFor User   @relation("ReceivedProposals", fields: [proposedForId], references: [id], onDelete: Cascade)
+  proposedForId String
+  
+  // Se è una modifica, riferimento all'originale
+  originalActivityId String?
+  originalActivityType String? // WORKOUT, SCHEDULED_ACTIVITY, RACE_RESULT
+  
+  // Metadati
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  respondedAt DateTime?
+  responseNotes String? @db.Text
+  
+  @@index([proposedById])
+  @@index([proposedForId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("activity_proposals")
+}
+
+model WorkoutProposal {
+  id          String         @id @default(cuid())
+  action      ProposalAction
+  status      ProposalStatus @default(PENDING_APPROVAL)
+  
+  // Dati dell'allenamento proposto
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  type        WorkoutType
+  duration    Int?           // in minuti
+  intensity   String?        @db.VarChar(50)
+  exercises   String?        @db.Text // JSON degli esercizi
+  notes       String?        @db.Text
+  
+  // Relazioni
+  proposedBy  User   @relation("ProposedWorkouts", fields: [proposedById], references: [id], onDelete: Cascade)
+  proposedById String
+  proposedFor User   @relation("ReceivedWorkoutProposals", fields: [proposedForId], references: [id], onDelete: Cascade)
+  proposedForId String
+  
+  // Se è una modifica, riferimento all'originale
+  originalWorkoutId String?
+  
+  // Metadati
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  respondedAt DateTime?
+  responseNotes String? @db.Text
+  
+  @@index([proposedById])
+  @@index([proposedForId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("workout_proposals")
+}
+
+// ========================================
 // ENUMERAZIONI
 // ========================================
 enum UserRole {
@@ -452,4 +560,56 @@ enum ParticipantRole {
   ADMIN
   MODERATOR
   MEMBER
+}
+
+// ========================================
+// NUOVI ENUM PER I CAMPI SPORTIVI
+// ========================================
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum DominantHand {
+  RIGHT
+  LEFT
+  AMBIDEXTROUS
+}
+
+enum SportLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ELITE
+}
+
+enum SportGoal {
+  RECREATIONAL
+  COMPETITIVE
+  PROFESSIONAL
+}
+
+// ========================================
+// ENUM PER SISTEMA DI PROPOSTE
+// ========================================
+enum ProposalType {
+  ACTIVITY
+  WORKOUT
+  MODIFICATION
+  DELETION
+}
+
+enum ProposalAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum ProposalStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  EXPIRED
 }

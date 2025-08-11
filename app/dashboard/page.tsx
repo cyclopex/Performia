@@ -133,7 +133,6 @@ export default function DashboardPage() {
   const [showEditActivity, setShowEditActivity] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<ScheduledActivity | null>(null)
   const [scheduledActivities, setScheduledActivities] = useState<ScheduledActivity[]>([])
-  const [loading, setLoading] = useState(true)
   
   // Nuovi stati per la gestione completa
   const [workouts, setWorkouts] = useState<Workout[]>([])
@@ -141,7 +140,6 @@ export default function DashboardPage() {
   const [showAddWorkout, setShowAddWorkout] = useState(false)
   const [showAddRace, setShowAddRace] = useState(false)
   const [showAddAnthropometric, setShowAddAnthropometric] = useState(false)
-  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('ALL')
   const [filterStatus, setFilterStatus] = useState('ALL')
@@ -151,7 +149,6 @@ export default function DashboardPage() {
   const loadActivities = useCallback(async () => {
     if (!session?.user?.id) return
     
-    setLoading(true)
     try {
       const response = await fetch('/api/activities')
       if (response.ok) {
@@ -161,7 +158,6 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Errore nel caricamento delle attività:', error)
     } finally {
-      setLoading(false)
     }
   }, [session?.user?.id])
 
@@ -851,7 +847,7 @@ export default function DashboardPage() {
                         </div>
                         
                         {workout.notes && (
-                          <p className="text-sm text-gray-600 mt-3 italic">"{workout.notes}"</p>
+                          <p className="text-sm text-gray-600 mt-3 italic">"{workout.notes}"quot;{workout.notes}"{workout.notes}"quot;</p>
                         )}
                       </div>
                       
@@ -894,7 +890,7 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsPieChart>
                     <Pie
-                      data={Object.entries(workoutStats.byType).map(([type, count]) => ({
+                      data={Object.entries(workoutStats.byType).map(([type, ]) => ({
                         name: type,
                         value: count
                       }))}
@@ -904,7 +900,7 @@ export default function DashboardPage() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {Object.entries(workoutStats.byType).map(([type, count], index) => (
+                      {Object.entries(workoutStats.byType).map(([type, ], index) => (
                         <Cell key={`cell-${index}`} fill={getActivityColor(type).split(' ')[1]} />
                       ))}
                     </Pie>

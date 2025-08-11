@@ -8,12 +8,47 @@ const registerSchema = z.object({
   email: z.string().email('Email non valida'),
   password: z.string().min(6, 'La password deve essere di almeno 6 caratteri'),
   role: z.enum(['ATHLETE', 'COACH', 'PROFESSIONAL']),
+  // Nuovi campi opzionali
+  birthDate: z.string().optional(),
+  phone: z.string().optional(),
+  city: z.string().optional(),
+  height: z.string().optional(),
+  weight: z.string().optional(),
+  gender: z.string().optional(),
+  dominantHand: z.string().optional(),
+  sports: z.array(z.string()).optional(),
+  sportLevel: z.string().optional(),
+  yearsExperience: z.string().optional(),
+  sportGoals: z.string().optional(),
+  trainingAvailability: z.array(z.string()).optional(),
+  trainingFrequency: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, password, role } = registerSchema.parse(body)
+    const validatedData = registerSchema.parse(body)
+    
+    const { 
+      name, 
+      email, 
+      password, 
+      role,
+      // Nuovi campi
+      birthDate,
+      phone,
+      city,
+      height,
+      weight,
+      gender,
+      dominantHand,
+      sports,
+      sportLevel,
+      yearsExperience,
+      sportGoals,
+      trainingAvailability,
+      trainingFrequency
+    } = validatedData
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -30,26 +65,50 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role,
-        isApproved: role === 'ATHLETE', // Athletes are auto-approved
-      }
-    })
+    // Create user with transaction to include profile
+    const result = await prisma.$transaction(async (tx) => {
+      // Create user
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role,
+          isApproved: role === 'ATHLETE', // Athletes are auto-approved
+        }
+      })
 
-    // Create profile
-    await prisma.profile.create({
-      data: {
-        userId: user.id,
-      }
+      // Create profile with all new fields
+      const profile = await tx.profile.create({
+        data: {
+          userId: user.id,
+          birthDate: birthDate ? new Date(birthDate) : null,
+          phone: phone || null,
+          location: city || null,
+          height: height ? parseFloat(height) : null,
+          weight: weight ? parseFloat(weight) : null,
+          gender: gender || null,
+          dominantHand: dominantHand || null,
+          sports: sports ? JSON.stringify(sports) : null,
+          specializations: sports ? JSON.stringify(sports) : null, // Mantenuto per compatibilità
+          experience: yearsExperience ? `${yearsExperience} anni` : null,
+          preferences: JSON.stringify({
+            sportLevel: sportLevel || null,
+            sportGoals: sportGoals || null,
+            trainingAvailability: trainingAvailability || [],
+            trainingFrequency: trainingFrequency || null
+          })
+        }
+      })
+
+      return { user, profile }
     })
 
     return NextResponse.json(
-      { message: 'Utente creato con successo' },
+      { 
+        message: 'Utente creato con successo',
+        userId: result.user.id
+      },
       { status: 201 }
     )
   } catch (error) {

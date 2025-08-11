@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 
 // GET - Recupera le chat dell'utente
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('🔐 Controllo autenticazione chat...')
     const session = await getServerSession(authOptions)

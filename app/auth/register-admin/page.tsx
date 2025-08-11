@@ -70,7 +70,7 @@ export default function AdminRegisterPage() {
       } else {
         toast.error(data.error || 'Errore durante la registrazione')
       }
-    } catch (error) {
+    } catch {
       toast.error('Errore durante la registrazione')
     } finally {
       setIsLoading(false)

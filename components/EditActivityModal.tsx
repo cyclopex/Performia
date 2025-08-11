@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Calendar, Clock, User, Tag } from 'lucide-react'
+import { X, Calendar, Clock, Tag } from 'lucide-react'
 
 interface EditActivityModalProps {
   isOpen: boolean
   onClose: () => void
-  onEdit: (activity: any) => void
-  activity: any
+  onEdit: (activity: Activity) => void
+  activity: Activity
 }
 
 interface Activity {
@@ -147,7 +147,7 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
     })
   }
 
-  const handleInputChange = (field: keyof Activity, value: any) => {
+  const handleInputChange = (field: keyof Activity, value: string | number) => {
     setFormData({ ...formData, [field]: value })
     // Rimuovi errore quando l'utente inizia a correggere
     if (errors[field]) {

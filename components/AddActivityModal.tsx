@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button'
 interface AddActivityModalProps {
   isOpen: boolean
   onClose: () => void
-  onAdd: (activity: any) => void
+  onAdd: (activity: Activity) => void
 }
 
 interface Activity {
@@ -157,7 +157,7 @@ export default function AddActivityModal({ isOpen, onClose, onAdd }: AddActivity
     })
   }
 
-  const handleInputChange = (field: keyof Activity, value: any) => {
+  const handleInputChange = (field: keyof Activity, value: string | number) => {
     setActivity({ ...activity, [field]: value })
     // Rimuovi errore quando l'utente inizia a correggere
     if (errors[field]) {

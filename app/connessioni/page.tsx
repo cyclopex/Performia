@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { User, Connection } from '@prisma/client'
 
 interface ConnectionWithUser {
   id: string
@@ -45,7 +44,7 @@ export default function ConnessioniPage() {
   const [connections, setConnections] = useState<ConnectionWithUser[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserWithConnection[]>([])
-  const [loading, setLoading] = useState(false)
+  
   const [searchLoading, setSearchLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'connections' | 'search'>('connections')
 
@@ -53,7 +52,7 @@ export default function ConnessioniPage() {
   const loadConnections = async () => {
     if (!session?.user?.id) return
     
-    setLoading(true)
+    
     try {
       const response = await fetch('/api/connections')
       if (response.ok) {
@@ -63,7 +62,7 @@ export default function ConnessioniPage() {
     } catch (error) {
       console.error('Errore nel caricamento delle connessioni:', error)
     } finally {
-      setLoading(false)
+      
     }
   }
 

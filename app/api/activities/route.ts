@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
-    let whereClause: any = {
+    const whereClause = {
       OR: [
         { userId: session.user.id },
         { assignedTo: session.user.id }
