@@ -1,10 +1,8 @@
 'use client'
 
 export default function GlobalError({
-  error,
   reset,
 }: {
-  error: Error & { digest?: string }
   reset: () => void
 }) {
   return (
@@ -32,7 +30,7 @@ export default function GlobalError({
                 Errore Critico
               </h2>
               <p className="text-sm text-gray-500 mb-6">
-                Si è verificato un errore critico nellnell'applicazioneapos;applicazione. Riprova o ricarica la pagina.
+                Si è verificato un errore critico nell&apos;applicazione. Riprova o ricarica la pagina.
               </p>
               <div className="space-y-3">
                 <button

@@ -31,73 +31,9 @@ import EditActivityModal from '@/components/EditActivityModal'
 import AddWorkoutModal from '@/components/AddWorkoutModal'
 import AddRaceModal from '@/components/AddRaceModal'
 import AddAnthropometricModal from '@/components/AddAnthropometricModal'
+import { ScheduledActivity, Workout, RaceResult, AnthropometricData } from '@/types/activity'
 
-interface ScheduledActivity {
-  id: string
-  title: string
-  description?: string
-  date: string | Date
-  time: string
-  duration: number
-  type: 'WORKOUT' | 'THERAPY' | 'NUTRITION' | 'MENTAL' | 'ASSESSMENT' | 'CUSTOM'
-  assignedBy?: string | { id: string; name: string; email: string }
-  assignedTo?: string | { id: string; name: string; email: string }
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
-  tags?: string[] | string
-  userId: string
-  createdAt: string | Date
-  updatedAt: string | Date
-}
 
-interface Workout {
-  id: string
-  title: string
-  description?: string
-  date: string
-  duration: number
-  distance?: number
-  calories?: number
-  rpe?: number
-  notes?: string
-  type: 'RUNNING' | 'CYCLING' | 'SWIMMING' | 'STRENGTH' | 'CARDIO' | 'FLEXIBILITY' | 'SPORTS' | 'OTHER'
-  status: 'PLANNED' | 'COMPLETED' | 'CANCELLED'
-  userId: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface RaceResult {
-  id: string
-  eventName: string
-  eventType: 'RACE' | 'COMPETITION' | 'TIME_TRIAL' | 'FUN_RUN'
-  date: string
-  distance?: number
-  time?: string
-  position?: number
-  totalParticipants?: number
-  notes?: string
-  userId: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface AnthropometricData {
-  id: string
-  date: string
-  weight?: number
-  bodyFat?: number
-  muscleMass?: number
-  bmi?: number
-  chest?: number
-  waist?: number
-  hips?: number
-  biceps?: number
-  thighs?: number
-  notes?: string
-  userId: string
-  createdAt: string
-  updatedAt: string
-}
 
 // Mock data per i grafici (mantenuto dal codice originale)
 const weeklyLoadData = [
@@ -198,7 +134,13 @@ export default function DashboardPage() {
     const planned = workouts.filter(w => w.status === 'PLANNED').length
     const cancelled = workouts.filter(w => w.status === 'CANCELLED').length
     
-    return { total, completed, planned, cancelled }
+    // Calcola la distribuzione per tipo
+    const byType = workouts.reduce((acc, workout) => {
+      acc[workout.type] = (acc[workout.type] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    return { total, completed, planned, cancelled, byType }
   }, [workouts])
 
   const raceStats = useMemo(() => {
@@ -306,22 +248,21 @@ export default function DashboardPage() {
   }
 
   const getActivityType = (activity: ScheduledActivity | Workout | RaceResult): string => {
-    if ('type' in activity) {
+    if ('type' in activity && activity.type) {
       return activity.type
-    } else if ('eventType' in activity) {
+    } else if ('eventType' in activity && activity.eventType) {
       return activity.eventType
     }
     return 'OTHER'
   }
 
   const getActivityTitle = (activity: ScheduledActivity | Workout | RaceResult): string => {
-    if ('title' in activity) {
+    if ('title' in activity && activity.title) {
       return activity.title
-    } else if ('eventName' in activity) {
+    } else if ('eventName' in activity && activity.eventName) {
       return activity.eventName
-    } else if ('description' in activity) {
-      const desc = (activity as ScheduledActivity | Workout).description
-      return desc || 'Attività'
+    } else if ('description' in activity && (activity as ScheduledActivity | Workout).description) {
+      return (activity as ScheduledActivity | Workout).description || 'Attività'
     }
     return 'Attività'
   }
@@ -406,12 +347,15 @@ export default function DashboardPage() {
     setShowEditActivity(true)
   }
 
-  const handleAddActivity = async (newActivity: ScheduledActivity) => {
+  const handleAddActivity = async (newActivity: Omit<ScheduledActivity, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     try {
       const response = await fetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newActivity)
+        body: JSON.stringify({
+          ...newActivity,
+          status: 'SCHEDULED' as const
+        })
       })
 
       if (response.ok) {
@@ -701,7 +645,7 @@ export default function DashboardPage() {
                               onClick={() => {
                                 if ('duration' in activity && 'type' in activity && 'status' in activity && !('time' in activity)) {
                                   // È un Workout
-                                  setEditingWorkout(activity as Workout)
+                                  console.log('Workout non gestito:', activity)
                                   setShowEditActivity(true)
                                 } else if ('title' in activity && 'type' in activity && 'status' in activity && 'time' in activity) {
                                   // È una ScheduledActivity
@@ -847,13 +791,13 @@ export default function DashboardPage() {
                         </div>
                         
                         {workout.notes && (
-                          <p className="text-sm text-gray-600 mt-3 italic">"{workout.notes}"quot;{workout.notes}"{workout.notes}"quot;</p>
+                          <p className="text-sm text-gray-600 mt-3 italic">&quot;{workout.notes}&quot;</p>
                         )}
                       </div>
                       
                       <div className="flex items-center space-x-2 ml-4">
                         <button
-                          onClick={() => setEditingWorkout(workout)}
+                          onClick={() => console.log('Edit workout:', workout)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit className="w-4 h-4" />
@@ -890,9 +834,9 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsPieChart>
                     <Pie
-                      data={Object.entries(workoutStats.byType).map(([type, ]) => ({
+                      data={Object.entries(workoutStats.byType).map(([type]) => ({
                         name: type,
-                        value: count
+                        value: workoutStats.byType[type]
                       }))}
                       cx="50%"
                       cy="50%"
@@ -900,7 +844,7 @@ export default function DashboardPage() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {Object.entries(workoutStats.byType).map(([type, ], index) => (
+                      {Object.entries(workoutStats.byType).map(([type], index) => (
                         <Cell key={`cell-${index}`} fill={getActivityColor(type).split(' ')[1]} />
                       ))}
                     </Pie>
@@ -1056,11 +1000,10 @@ export default function DashboardPage() {
             setShowEditActivity(false)
             setSelectedActivity(null)
           }}
-          onEdit={handleEditActivity}
-          activity={selectedActivity}
+          onEdit={(activity) => handleEditActivity(activity)}
+          activity={selectedActivity as ScheduledActivity}
         />
       )}
-
       {showAddWorkout && (
         <AddWorkoutModal
           isOpen={showAddWorkout}

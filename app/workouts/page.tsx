@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { 
@@ -12,7 +12,7 @@ import {
   Zap,
   Edit,
   Trash2,
-  Filter,
+  
   Search,
   TrendingUp,
   Activity
@@ -89,8 +89,9 @@ export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>(mockWorkouts)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('ALL')
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null)
+
+  
+  
 
   // Redirect se non autenticato
   if (status === 'loading') {
@@ -147,12 +148,6 @@ export default function WorkoutsPage() {
     })
   }
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('it-IT', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
   const handleDeleteWorkout = (workoutId: string) => {
     if (confirm('Sei sicuro di voler eliminare questo allenamento?')) {
@@ -183,7 +178,7 @@ export default function WorkoutsPage() {
             </p>
           </div>
           <Button
-            onClick={() => setShowAddForm(true)}
+            onClick={() => {}}
             className="mt-4 sm:mt-0"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -325,7 +320,7 @@ export default function WorkoutsPage() {
                     </div>
                     
                     {workout.notes && (
-                      <p className="text-sm text-gray-500 italic">"{workout.notes}"</p>
+                      <p className="text-sm text-gray-500 italic">&quot;{workout.notes}&quot;</p>
                     )}
                   </div>
                   
@@ -333,7 +328,7 @@ export default function WorkoutsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setEditingWorkout(workout)}
+                      onClick={() => console.log('Edit workout:', workout)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>

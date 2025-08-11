@@ -20,6 +20,7 @@ interface Proposal {
   location?: string
   notes?: string
   createdAt: string
+  proposalType?: 'activity' | 'workout'
   proposedBy: {
     id: string
     name: string

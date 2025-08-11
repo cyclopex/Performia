@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Search, MoreVertical, Phone, Video, Plus } from 'lucide-react'
@@ -87,7 +88,7 @@ export default function ChatPage() {
   const targetUserId = searchParams.get('userId')
 
   // Carica le chat dell'utente
-  const loadChats = async () => {
+  const loadChats = useCallback(async () => {
     if (!session?.user?.id) return
     
     setLoading(true)
@@ -118,10 +119,10 @@ export default function ChatPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [session, targetUserId, selectedChat])
 
   // Carica i messaggi di una chat
-  const loadMessages = async (chatId: string) => {
+  const loadMessages = useCallback(async (chatId: string) => {
     if (!session?.user?.id) return
     
     setMessagesLoading(true)
@@ -136,7 +137,7 @@ export default function ChatPage() {
     } finally {
       setMessagesLoading(false)
     }
-  }
+  }, [session])
 
   // Crea una nuova chat diretta
   const createDirectChat = async (userId: string) => {
@@ -273,10 +274,10 @@ export default function ChatPage() {
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     {chat.participants[0]?.image ? (
-                      <img
+                      <Image
                         src={chat.participants[0].image}
                         alt={chat.name}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover" width={48} height={48}
                       />
                     ) : (
                       <span className="text-blue-600 font-semibold text-lg">
@@ -324,7 +325,7 @@ export default function ChatPage() {
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     {selectedChat.participants[0]?.image ? (
-                      <img
+                      <Image
                         src={selectedChat.participants[0].image}
                         alt={selectedChat.name}
                         className="w-10 h-10 rounded-full object-cover"

@@ -32,7 +32,7 @@ export default function GlobalError({
                 Errore Critico
               </h2>
               <p className="text-sm text-gray-500 mb-6">
-                Si è verificato un errore critico nell'applicazione. Riprova o ricarica la pagina.
+                Si è verificato un errore critico nellnell'applicazioneapos;applicazione. Riprova o ricarica la pagina.
               </p>
               <div className="space-y-3">
                 <button

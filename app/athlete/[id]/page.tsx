@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
-  
-  
   Target,
   Activity,
   Trophy,
@@ -259,10 +258,10 @@ export default function AthleteProfilePage() {
           <div className="bg-white rounded-xl shadow-sport p-6">
             <div className="flex items-center space-x-6">
               {athleteProfile.image ? (
-                <img 
+                <Image 
                   src={athleteProfile.image} 
                   alt={athleteProfile.name}
-                  className="w-20 h-20 rounded-full object-cover"
+                  className="w-20 h-20 rounded-full object-cover" width={80} height={80}
                 />
               ) : (
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
@@ -427,7 +426,7 @@ export default function AthleteProfilePage() {
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={Object.entries(workoutTypeData).map(([, ]) => ({
+                        data={Object.entries(workoutTypeData).map(([type, count]) => ({
                           name: type,
                           value: count
                         }))}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { 
@@ -168,10 +169,10 @@ export default function ProfilePage() {
           {/* Cover image */}
           <div className="h-48 bg-gradient-to-r from-primary-600 to-primary-800 relative">
             {userData.profile.coverImage && (
-              <img 
+              <Image 
                 src={userData.profile.coverImage} 
                 alt="Cover" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover" width={400} height={300}
               />
             )}
             <div className="absolute inset-0 bg-black bg-opacity-30"></div>
@@ -184,10 +185,10 @@ export default function ProfilePage() {
               <div className="relative -mt-20">
                 <div className="w-40 h-40 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white text-6xl font-bold shadow-xl border-4 border-white">
                   {userData.profile.avatar ? (
-                    <img 
+                    <Image 
                       src={userData.profile.avatar} 
                       alt="Avatar" 
-                      className="w-full h-full rounded-full object-cover"
+                      className="w-full h-full rounded-full object-cover" width={160} height={160}
                     />
                   ) : (
                     userData.name.charAt(0).toUpperCase()

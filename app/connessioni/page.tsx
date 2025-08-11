@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 
 interface ConnectionWithUser {
@@ -49,7 +50,7 @@ export default function ConnessioniPage() {
   const [activeTab, setActiveTab] = useState<'connections' | 'search'>('connections')
 
   // Carica le connessioni
-  const loadConnections = async () => {
+  const loadConnections = useCallback(async () => {
     if (!session?.user?.id) return
     
     
@@ -64,10 +65,10 @@ export default function ConnessioniPage() {
     } finally {
       
     }
-  }
+  }, [session])
 
   // Cerca utenti
-  const searchUsers = async () => {
+  const searchUsers = useCallback(async () => {
     if (!session?.user?.id) return
     
     setSearchLoading(true)
@@ -82,7 +83,7 @@ export default function ConnessioniPage() {
     } finally {
       setSearchLoading(false)
     }
-  }
+  }, [session, searchQuery])
 
   // Invia richiesta di connessione
   const sendConnectionRequest = async (userId: string) => {
@@ -160,7 +161,7 @@ export default function ConnessioniPage() {
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+  }, [searchQuery, searchUsers])
 
   const pendingConnections = connections.filter(c => c.status === 'PENDING' && !c.isInitiator)
   const acceptedConnections = connections.filter(c => c.status === 'ACCEPTED')
@@ -212,10 +213,10 @@ export default function ConnessioniPage() {
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                           {connection.otherUser.image ? (
-                            <img
+                            <Image
                               src={connection.otherUser.image}
                               alt={connection.otherUser.name}
-                              className="w-12 h-12 rounded-full object-cover"
+                              className="w-12 h-12 rounded-full object-cover" width={48} height={48}
                             />
                           ) : (
                             <span className="text-blue-600 font-semibold text-lg">
@@ -263,10 +264,10 @@ export default function ConnessioniPage() {
                       <div className="flex items-center space-x-3 mb-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                           {connection.otherUser.image ? (
-                            <img
+                            <Image
                               src={connection.otherUser.image}
                               alt={connection.otherUser.name}
-                              className="w-10 h-10 rounded-full object-cover"
+                              className="w-10 h-10 rounded-full object-cover" width={40} height={40}
                             />
                           ) : (
                             <span className="text-blue-600 font-semibold">
@@ -311,10 +312,10 @@ export default function ConnessioniPage() {
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                           {connection.otherUser.image ? (
-                            <img
+                            <Image
                               src={connection.otherUser.image}
                               alt={connection.otherUser.name}
-                              className="w-12 h-12 rounded-full object-cover"
+                              className="w-12 h-12 rounded-full object-cover" width={48} height={48}
                             />
                           ) : (
                             <span className="text-gray-600 font-semibold text-lg">
@@ -372,10 +373,10 @@ export default function ConnessioniPage() {
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                         {user.image ? (
-                          <img
+                          <Image
                             src={user.image}
                             alt={user.name}
-                            className="w-12 h-12 rounded-full object-cover"
+                            className="w-12 h-12 rounded-full object-cover" width={48} height={48}
                           />
                         ) : (
                           <span className="text-blue-600 font-semibold text-lg">

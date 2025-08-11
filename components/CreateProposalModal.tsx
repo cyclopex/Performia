@@ -56,7 +56,7 @@ interface ProposalData {
   startTime?: string | null
   endTime?: string | null
   duration?: number | null
-  location: string
+  location?: string
   notes: string
   proposedForId: string
   intensity?: string
@@ -105,15 +105,38 @@ export default function CreateProposalModal({ isOpen, onClose, proposalType, tar
 
   // Popola il form con i dati di un elemento esistente
   const populateFormFromItem = (item: ScheduledActivity | Workout | RaceResult) => {
-    if (item.title) setTitle(item.title)
-    if (item.description) setDescription(item.description)
-    if (item.type) setType(item.type)
+    // Gestisci title (presente in ScheduledActivity e Workout, non in RaceResult)
+    if ('title' in item && item.title) {
+      setTitle(item.title)
+    } else if ('eventName' in item && item.eventName) {
+      setTitle(item.eventName)
+    }
+    
+    // Gestisci description (presente in ScheduledActivity e Workout, non in RaceResult)
+    if ('description' in item && item.description) {
+      setDescription(item.description)
+    }
+    
+    // Gestisci type (presente in ScheduledActivity e Workout, non in RaceResult)
+    if ('type' in item && item.type) {
+      setType(item.type)
+    }
+    
+    // Gestisci date (presente in tutti)
     if (item.date) {
       const date = new Date(item.date)
       setStartTime(date.toISOString().slice(0, 16))
     }
-    if (item.duration) setDuration(item.duration.toString())
-    if (item.notes) setNotes(item.notes)
+    
+    // Gestisci duration (presente in ScheduledActivity e Workout, non in RaceResult)
+    if ('duration' in item && item.duration) {
+      setDuration(item.duration.toString())
+    }
+    
+    // Gestisci notes (presente in Workout e RaceResult, non in ScheduledActivity)
+    if ('notes' in item && item.notes) {
+      setNotes(item.notes)
+    }
     
     // Determina il tipo di proposta
     if ('eventName' in item) {

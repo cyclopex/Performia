@@ -250,7 +250,7 @@ export default function AdminRegisterPage() {
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
                   Questa pagina è destinata solo alla creazione del primo amministratore del sistema. 
-                  Una volta creato l'admin, questa funzionalità sarà disabilitata.
+                  Una volta creato l&apos;admin, questa funzionalità sarà disabilitata. 
                 </p>
               </div>
             </div>

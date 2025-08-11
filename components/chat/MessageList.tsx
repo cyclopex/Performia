@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 
 interface Message {
@@ -94,10 +95,10 @@ export default function MessageList({ messages, loading }: MessageListProps) {
           
           {message.type === 'image' && message.fileUrl && (
             <div>
-              <img
+              <Image
                 src={message.fileUrl}
                 alt="Immagine"
-                className="max-w-full rounded-lg"
+                className="max-w-full rounded-lg" width={400} height={300}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
                   e.currentTarget.nextElementSibling?.classList.remove('hidden')

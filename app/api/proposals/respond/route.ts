@@ -164,9 +164,8 @@ export async function PUT(request: NextRequest) {
               title: proposal.title,
               description: proposal.description,
               type: proposal.type,
+              date: new Date(),
               duration: proposal.duration || 60,
-              intensity: proposal.intensity,
-              exercises: proposal.exercises,
               notes: proposal.notes,
               assignedBy: proposal.proposedById
             }
@@ -180,8 +179,6 @@ export async function PUT(request: NextRequest) {
               description: proposal.description,
               type: proposal.type,
               duration: proposal.duration || 60,
-              intensity: proposal.intensity,
-              exercises: proposal.exercises,
               notes: proposal.notes
             }
           })

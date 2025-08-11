@@ -6,21 +6,11 @@ import { X, Calendar, Clock, Tag } from 'lucide-react'
 interface EditActivityModalProps {
   isOpen: boolean
   onClose: () => void
-  onEdit: (activity: Activity) => void
-  activity: Activity
+  onEdit: (activity: ScheduledActivity) => Promise<void> | void
+  activity: ScheduledActivity
 }
 
-interface Activity {
-  id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  duration: number
-  type: 'WORKOUT' | 'THERAPY' | 'NUTRITION' | 'MENTAL' | 'ASSESSMENT' | 'CUSTOM'
-  assignedTo?: string
-  tags: string[]
-}
+import { ScheduledActivity } from '@/types/activity'
 
 const activityTypes = [
   { value: 'WORKOUT', label: 'Allenamento', icon: '💪' },
@@ -32,7 +22,7 @@ const activityTypes = [
 ]
 
 export default function EditActivityModal({ isOpen, onClose, onEdit, activity }: EditActivityModalProps) {
-  const [formData, setFormData] = useState<Activity>({
+  const [formData, setFormData] = useState<ScheduledActivity>({
     id: '',
     title: '',
     description: '',
@@ -41,7 +31,11 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
     duration: 60,
     type: 'WORKOUT',
     assignedTo: '',
-    tags: []
+    tags: [],
+    status: 'SCHEDULED',
+    userId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   })
   const [newTag, setNewTag] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -63,7 +57,11 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
             ? activity.tags 
             : (typeof activity.tags === 'string' 
                 ? JSON.parse(activity.tags || '[]') 
-                : [])
+                : []),
+          status: activity.status || 'SCHEDULED',
+          userId: activity.userId || '',
+          createdAt: activity.createdAt || new Date().toISOString(),
+          updatedAt: activity.updatedAt || new Date().toISOString()
         })
         setErrors({})
       } catch (error) {
@@ -90,7 +88,7 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
       newErrors.duration = 'La durata deve essere tra 15 e 480 minuti'
     }
 
-    if (formData.tags.length > 10) {
+    if (formData.tags && formData.tags.length > 10) {
       newErrors.tags = 'Massimo 10 tag consentiti'
     }
 
@@ -118,12 +116,16 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
     const trimmedTag = newTag.trim()
     if (!trimmedTag) return
     
-    if (formData.tags.length >= 10) {
+    if (!formData.tags) {
+      setFormData({ ...formData, tags: [] })
+    }
+    
+    if (formData.tags && formData.tags.length >= 10) {
       alert('Massimo 10 tag consentiti')
       return
     }
     
-    if (formData.tags.includes(trimmedTag)) {
+    if (formData.tags && formData.tags.includes(trimmedTag)) {
       alert('Tag già presente')
       return
     }
@@ -135,19 +137,20 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
     
     setFormData({
       ...formData,
-      tags: [...formData.tags, trimmedTag]
+      tags: [...(formData.tags || []), trimmedTag]
     })
     setNewTag('')
   }
 
   const removeTag = (tagToRemove: string) => {
+    if (!formData.tags) return
     setFormData({
       ...formData,
       tags: formData.tags.filter(tag => tag !== tagToRemove)
     })
   }
 
-  const handleInputChange = (field: keyof Activity, value: string | number) => {
+  const handleInputChange = (field: keyof ScheduledActivity, value: string | number) => {
     setFormData({ ...formData, [field]: value })
     // Rimuovi errore quando l'utente inizia a correggere
     if (errors[field]) {
@@ -294,10 +297,10 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Tag className="w-4 h-4 inline mr-1" />
-                Tags ({formData.tags.length}/10)
+                Tags ({(formData.tags || []).length}/10)
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
-                {formData.tags.map((tag, index) => (
+                {(formData.tags || []).map((tag, index) => (
                   <span
                     key={index}
                     className="bg-primary-100 text-primary-800 px-2 py-1 rounded-full text-sm flex items-center"
@@ -322,13 +325,13 @@ export default function EditActivityModal({ isOpen, onClose, onEdit, activity }:
                   placeholder="Aggiungi tag..."
                   maxLength={20}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                  disabled={formData.tags.length >= 10}
+                  disabled={(formData.tags || []).length >= 10}
                 />
                 <button
                   type="button"
                   onClick={addTag}
                   className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={formData.tags.length >= 10}
+                  disabled={(formData.tags || []).length >= 10}
                 >
                   +
                 </button>

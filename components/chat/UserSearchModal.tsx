@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { X, Search, User } from 'lucide-react'
 
@@ -33,7 +34,7 @@ export default function UserSearchModal({ isOpen, onClose, onUserSelect }: UserS
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const searchUsers = async () => {
+  const searchUsers = useCallback(async () => {
     if (!searchQuery.trim() || !session?.user?.id) return
     
     setLoading(true)
@@ -55,7 +56,7 @@ export default function UserSearchModal({ isOpen, onClose, onUserSelect }: UserS
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery, session?.user?.id])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -164,10 +165,10 @@ export default function UserSearchModal({ isOpen, onClose, onUserSelect }: UserS
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                       {user.image ? (
-                        <img
+                        <Image
                           src={user.image}
                           alt={user.name || 'Utente'}
-                          className="w-10 h-10 rounded-full object-cover"
+                          className="w-10 h-10 rounded-full object-cover" width={40} height={40}
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
                             e.currentTarget.nextElementSibling?.classList.remove('hidden')

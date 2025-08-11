@@ -8,19 +8,10 @@ import Button from '@/components/ui/Button'
 interface AddActivityModalProps {
   isOpen: boolean
   onClose: () => void
-  onAdd: (activity: Activity) => void
+  onAdd: (activity: Omit<ScheduledActivity, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void> | void
 }
 
-interface Activity {
-  title: string
-  description: string
-  date: string
-  time: string
-  duration: number
-  type: 'WORKOUT' | 'THERAPY' | 'NUTRITION' | 'MENTAL' | 'ASSESSMENT' | 'CUSTOM'
-  assignedTo?: string
-  tags: string[]
-}
+import { ScheduledActivity } from '@/types/activity'
 
 const activityTypes = [
   { value: 'WORKOUT', label: 'Allenamento', icon: '🏃‍♂️' },
@@ -40,15 +31,16 @@ const professionals = [
 
 export default function AddActivityModal({ isOpen, onClose, onAdd }: AddActivityModalProps) {
   const { data: session } = useSession()
-  const [activity, setActivity] = useState<Activity>({
+  const [activity, setActivity] = useState({
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
     time: '09:00',
     duration: 60,
-    type: 'WORKOUT',
+    type: 'WORKOUT' as const,
     assignedTo: '',
-    tags: []
+    tags: [] as string[],
+    status: 'SCHEDULED' as const
   })
 
   const [newTag, setNewTag] = useState('')
@@ -94,16 +86,17 @@ export default function AddActivityModal({ isOpen, onClose, onAdd }: AddActivity
       return
     }
     
-    // Rimuovi assignedTo se è vuoto
-    const { assignedTo, ...activityWithoutAssignedTo } = activity
-    
     const newActivity = {
-      id: Date.now().toString(),
-      ...activityWithoutAssignedTo,
-      status: 'SCHEDULED' as const,
+      title: activity.title,
+      description: activity.description,
+      date: activity.date,
+      time: activity.time,
+      duration: activity.duration,
+      type: activity.type,
+      status: activity.status,
+      tags: activity.tags,
       assignedBy: session?.user?.name || 'Tu',
-      // Aggiungi assignedTo solo se non è vuoto
-      ...(assignedTo && assignedTo.trim() !== '' && { assignedTo })
+      ...(activity.assignedTo && { assignedTo: activity.assignedTo })
     }
     
     onAdd(newActivity)
@@ -118,7 +111,8 @@ export default function AddActivityModal({ isOpen, onClose, onAdd }: AddActivity
       duration: 60,
       type: 'WORKOUT',
       assignedTo: '',
-      tags: []
+      tags: [],
+      status: 'SCHEDULED'
     })
     setNewTag('')
     setErrors({})
@@ -157,7 +151,7 @@ export default function AddActivityModal({ isOpen, onClose, onAdd }: AddActivity
     })
   }
 
-  const handleInputChange = (field: keyof Activity, value: string | number) => {
+  const handleInputChange = (field: keyof ScheduledActivity, value: string | number) => {
     setActivity({ ...activity, [field]: value })
     // Rimuovi errore quando l'utente inizia a correggere
     if (errors[field]) {
@@ -301,7 +295,7 @@ export default function AddActivityModal({ isOpen, onClose, onAdd }: AddActivity
                 Assegnato a (opzionale)
               </label>
               <select
-                value={activity.assignedTo}
+                value={activity.assignedTo || ''}
                 onChange={(e) => handleInputChange('assignedTo', e.target.value)}
                 className="input-field"
               >
