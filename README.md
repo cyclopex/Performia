@@ -5,15 +5,19 @@
 ## 📁 Progetti Inclusi
 
 ### 🏃‍♂️ [Performia](./app/) - Piattaforma di Gestione Sportiva
-**Performia<->** è l'applicazione principale che fornisce:
+**Performia** è l'applicazione principale che fornisce:
 - Dashboard completa per monitoraggio performance
 - Gestione allenamenti e programmi di training
 - Sistema di connessioni tra atleti e coach
 - Tracking dati antropometrici e progressi
 - Chat integrata per comunicazione
 - Sistema gare e risultati competitivi
+- **🆕 Sistema di proposte per attività e allenamenti**
+- **🆕 Gestione completa profili atleti**
+- **🆕 Dashboard avanzata con sezioni dedicate**
+- **🆕 Timeline eventi e stato proposte**
 
-**Tecnologie**: Next.js 14, React 18, TypeScript, Tailwind CSS, Prisma ORM
+**Tecnologie**: Next.js 14, React 18, TypeScript, Tailwind CSS, Prisma ORM, Recharts
 
 ### 🔧 [Altri Progetti in Sviluppo]
 - **Performia Analytics** - Analisi avanzate e machine learning
@@ -22,7 +26,7 @@
 
 ## 🚀 Quick Start
 
-### Per iniziare con Atletic:
+### Per iniziare con Performia:
 ```bash
 npm install
 cp env.example .env.local
@@ -46,11 +50,38 @@ npm run dev
 
 ## 📊 Roadmap
 
-- [x] **Fase 1**: Core platform (Performia<->) ✅
+- [x] **Fase 1**: Core platform (Performia) ✅
+- [x] **Fase 1.5**: Sistema proposte e gestione atleti ✅
 - [ ] **Fase 2**: Analytics avanzate e ML
 - [ ] **Fase 3**: App mobile nativa
 - [ ] **Fase 4**: API pubbliche e integrazioni
 - [ ] **Fase 5**: Piattaforma enterprise
+
+## 🆕 Nuove Funzionalità (v0.1.0)
+
+### 📋 Sistema di Proposte
+- **Proposte Attività**: Coach e professionisti possono proporre nuove attività
+- **Proposte Allenamenti**: Gestione completa degli allenamenti proposti
+- **Sistema di Approvazione**: Atleti approvano/rifiutano le proposte
+- **Tracking Stato**: Monitoraggio completo dello stato delle proposte
+
+### 👥 Gestione Atleti
+- **Profili Completi**: Dati personali, fisici e sportivi
+- **Connessioni**: Sistema di connessioni tra atleti e coach
+- **Dashboard Dedicata**: Vista completa per ogni atleta connesso
+- **Statistiche Avanzate**: Grafici e metriche personalizzate
+
+### 📊 Dashboard Avanzata
+- **Atleti Seguiti**: Lista degli atleti connessi con foto e sport
+- **Gare degli Atleti**: Timeline delle gare dei propri atleti
+- **Stato Proposte**: Monitoraggio delle proposte in attesa
+- **Timeline Eventi**: Prossimi eventi dei prossimi 7 giorni
+
+### 🔐 Autenticazione e Sicurezza
+- **Registrazione Multi-step**: Form completo per dati atleti
+- **Ruoli Utente**: ATHLETE, COACH, PROFESSIONAL, ADMIN
+- **Gestione Permessi**: Controllo accessi basato sui ruoli
+- **Sicurezza Dati**: Protezione dati sensibili e personali
 
 ## 🤝 Contribuire
 
