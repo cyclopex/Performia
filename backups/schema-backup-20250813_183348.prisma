@@ -1,0 +1,615 @@
+// Performia Schema Database - VERSIONE OTTIMIZZATA FINALE
+// Miglioramenti: Performance, Sicurezza, Funzionalità Avanzate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// AUTENTICAZIONE E SESSIONI
+// ========================================
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ========================================
+// GESTIONE UTENTI
+// ========================================
+model User {
+  id            String    @id @default(cuid())
+  name          String?   @db.VarChar(100)
+  email         String    @unique @db.VarChar(255)
+  emailVerified DateTime?
+  image         String?   @db.Text
+  password      String?   @db.VarChar(255)
+  role          UserRole  @default(ATHLETE)
+  isApproved    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  timezone      String?   @default("Europe/Rome") @db.VarChar(50)
+  language      String?   @default("it") @db.VarChar(10)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relazioni
+  accounts               Account[]
+  sessions               Session[]
+  profile                Profile?
+  connections            Connection[] @relation("UserConnections")
+  connectedTo            Connection[] @relation("ConnectedToUser")
+  workouts               Workout[]
+  raceResults            RaceResult[]
+  anthropometricData     AnthropometricData[]
+  payments               Payment[]
+  scheduledActivities    ScheduledActivity[]
+  assignedActivities     ScheduledActivity[] @relation("AssignedActivities")
+  receivedActivities     ScheduledActivity[] @relation("ReceivedActivities")
+  chatParticipants       ChatParticipant[]
+  sentMessages           Message[]
+  
+  // Relazioni per il sistema di proposte
+  proposedActivities     ActivityProposal[] @relation("ProposedActivities")
+  receivedProposals      ActivityProposal[] @relation("ReceivedProposals")
+  proposedWorkouts       WorkoutProposal[] @relation("ProposedWorkouts")
+  receivedWorkoutProposals WorkoutProposal[] @relation("ReceivedWorkoutProposals")
+  
+  // Relazioni per attività assegnate
+  assignedWorkouts       Workout[] @relation("AssignedWorkouts")
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?  @db.Text
+  location        String?  @db.VarChar(100)
+  birthDate       DateTime?
+  phone           String?  @db.VarChar(20)
+  website         String?  @db.VarChar(255)
+  specializations String?  @db.Text
+  experience      String?  @db.Text
+  certifications  String?  @db.Text
+  achievements    String?  @db.Text
+  socialLinks     String?  @db.Text
+  avatar          String?  @db.Text
+  coverImage      String?  @db.Text
+  isPublic        Boolean  @default(true)
+  preferences     String?  @db.Text
+  
+  // NUOVI CAMPI SPORTIVI E FISICI
+  // Dati fisici
+  height          Float?   // in cm
+  weight          Float?   // in kg
+  gender          Gender?  // Sesso biologico
+  dominantHand    DominantHand? // Mano dominante
+  
+  // Dati sportivi
+  sports          String?  @db.Text // JSON array di sport praticati
+  sportLevel      SportLevel? // Livello sportivo
+  yearsExperience Int?     // Anni di esperienza
+  
+  // Preferenze sportive
+  sportGoals      SportGoal? // Obiettivi sportivi
+  trainingAvailability String? @db.Text // JSON array disponibilità
+  trainingFrequency String? @db.Text // Frequenza allenamento
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("profiles")
+}
+
+// ========================================
+// CONNESSIONI TRA UTENTI
+// ========================================
+model Connection {
+  id              String           @id @default(cuid())
+  userId          String
+  connectedUserId String
+  status          ConnectionStatus @default(PENDING)
+  requestMessage  String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user          User @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
+  connectedUser User @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectedUserId])
+  @@index([userId])
+  @@index([connectedUserId])
+  @@index([status])
+  @@map("connections")
+}
+
+// ========================================
+// ALLENAMENTI E PERFORMANCE
+// ========================================
+model Workout {
+  id           String      @id @default(cuid())
+  userId       String
+  title        String      @db.VarChar(200)
+  description  String?     @db.Text
+  date         DateTime
+  startTime    DateTime?
+  endTime      DateTime?
+  duration     Int?        // in minutes
+  distance     Float?      // in km
+  calories     Int?
+  rpe          Int?        // Rate of Perceived Exertion 1-10
+  heartRateAvg Int?        // Average heart rate
+  heartRateMax Int?        // Maximum heart rate
+  pace         String?     @db.VarChar(20)  // Average pace
+  elevation    Int?        // Total elevation gain in meters
+  weather      String?     @db.Text // Weather conditions JSON
+  equipment    String?     @db.Text // Equipment used JSON
+  splits       String?     @db.Text // Lap/split data JSON
+  notes        String?     @db.Text
+  type         WorkoutType
+  isPublic     Boolean     @default(false)
+  tags         String?     @db.Text // Tags JSON array
+  location     String?     @db.VarChar(200)
+  gpsData      String?     @db.Text // GPS track JSON
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedByUser User? @relation("AssignedWorkouts", fields: [assignedBy], references: [id])
+  assignedBy String?
+
+  @@index([userId, date])
+  @@index([type])
+  @@index([date])
+  @@index([isPublic])
+  @@index([assignedBy])
+  @@map("workouts")
+}
+
+model RaceResult {
+  id                String   @id @default(cuid())
+  userId            String
+  raceName          String   @db.VarChar(200)
+  date              DateTime
+  distance          Float?   // in km
+  time              String   @db.VarChar(15) // format: "HH:MM:SS"
+  pace              String?  @db.VarChar(15) // format: "MM:SS per km"
+  position          Int?
+  totalParticipants Int?
+  category          String?  @db.VarChar(100)
+  ageGroup          String?  @db.VarChar(50)
+  location          String?  @db.VarChar(200)
+  raceType          String?  @db.VarChar(50)
+  personalBest      Boolean  @default(false)
+  seasonBest        Boolean  @default(false)
+  weather           String?  @db.Text // Weather JSON
+  elevation         Int?     // Total elevation gain
+  splits            String?  @db.Text // Race splits JSON
+  notes             String?  @db.Text
+  certificate       String?  @db.Text // URL to certificate/photo
+  verified          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([date])
+  @@index([personalBest])
+  @@index([seasonBest])
+  @@index([verified])
+  @@map("race_results")
+}
+
+model AnthropometricData {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime
+  weight       Float?   // in kg
+  height       Float?   // in cm
+  bodyFat      Float?   // percentage
+  muscleMass   Float?   // in kg
+  bmi          Float?
+  restingHR    Int?     // Resting heart rate
+  maxHR        Int?     // Maximum heart rate
+  vo2Max       Float?   // VO2 max
+  hydration    Float?   // percentage
+  bloodPressure String? @db.VarChar(20) // "120/80"
+  bodyTemp     Float?   // Body temperature
+  notes        String?  @db.Text
+  measuredBy   String?  @db.VarChar(100)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([date])
+  @@map("anthropometric_data")
+}
+
+// ========================================
+// PAGAMENTI E ABBONAMENTI
+// ========================================
+model Payment {
+  id                    String        @id @default(cuid())
+  userId                String
+  amount                Int           // in cents
+  currency              String        @default("eur") @db.VarChar(3)
+  status                PaymentStatus @default(PENDING)
+  stripePaymentIntentId String?       @unique @db.VarChar(255)
+  plan                  SubscriptionPlan
+  description           String?       @db.VarChar(500)
+  metadata              String?       @db.Text // JSON metadata
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([plan])
+  @@map("payments")
+}
+
+// ========================================
+// SISTEMA CHAT
+// ========================================
+model Chat {
+  id          String   @id @default(cuid())
+  type        ChatType @default(DIRECT)
+  name        String?  @db.VarChar(100)
+  description String?  @db.Text
+  avatar      String?  @db.Text
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  participants ChatParticipant[]
+  messages     Message[]
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([isArchived])
+  @@map("chats")
+}
+
+model ChatParticipant {
+  id           String          @id @default(cuid())
+  chatId       String
+  userId       String
+  role         ParticipantRole @default(MEMBER)
+  joinedAt     DateTime        @default(now())
+  leftAt       DateTime?
+  lastReadAt   DateTime?
+  isMuted      Boolean         @default(false)
+  isPinned     Boolean         @default(false)
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([userId])
+  @@index([chatId])
+  @@map("chat_participants")
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  content   String        @db.Text
+  type      String        @default("text") @db.VarChar(20)
+  fileUrl   String?       @db.Text
+  fileName  String?       @db.VarChar(255)
+  fileSize  Int?
+  status    MessageStatus @default(SENT)
+  isEdited  Boolean       @default(false)
+  editedAt  DateTime?
+  replyToId String?       // Message being replied to
+  metadata  String?       @db.Text // Additional message data JSON
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  chatId   String
+  senderId String
+  chat     Chat    @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender   User    @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+  @@index([senderId])
+  @@index([replyToId])
+  @@map("messages")
+}
+
+// ========================================
+// ATTIVITÀ PROGRAMMATE
+// ========================================
+model ScheduledActivity {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String         @db.VarChar(200)
+  description String?        @db.Text
+  date        DateTime
+  time        String         @db.VarChar(10)
+  duration    Int            // in minutes
+  type        ActivityType
+  assignedBy  String?
+  assignedTo  String?
+  status      ActivityStatus @default(SCHEDULED)
+  tags        String?        @db.Text // Tags JSON array
+  location    String?        @db.VarChar(200)
+  isRecurring Boolean        @default(false)
+  recurrence  String?        @db.Text // Recurrence pattern JSON
+  reminders   String?        @db.Text // Reminder settings JSON
+  notes       String?        @db.Text
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user           User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedByUser User? @relation("AssignedActivities", fields: [assignedBy], references: [id])
+  assignedToUser User? @relation("ReceivedActivities", fields: [assignedTo], references: [id])
+
+  @@index([userId, date])
+  @@index([assignedBy])
+  @@index([assignedTo])
+  @@index([date, status])
+  @@index([type])
+  @@index([status])
+  @@map("scheduled_activities")
+}
+
+// ========================================
+// SISTEMA DI PROPOSTE E APPROVAZIONI
+// ========================================
+model ActivityProposal {
+  id          String         @id @default(cuid())
+  type        ProposalType
+  action      ProposalAction
+  status      ProposalStatus @default(PENDING_APPROVAL)
+  
+  // Dati dell'attività proposta
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  activityType ActivityType
+  startTime   DateTime?
+  endTime     DateTime?
+  location    String?        @db.VarChar(255)
+  notes       String?        @db.Text
+  
+  // Relazioni
+  proposedBy  User   @relation("ProposedActivities", fields: [proposedById], references: [id], onDelete: Cascade)
+  proposedById String
+  proposedFor User   @relation("ReceivedProposals", fields: [proposedForId], references: [id], onDelete: Cascade)
+  proposedForId String
+  
+  // Se è una modifica, riferimento all'originale
+  originalActivityId String?
+  originalActivityType String? // WORKOUT, SCHEDULED_ACTIVITY, RACE_RESULT
+  
+  // Metadati
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  respondedAt DateTime?
+  responseNotes String? @db.Text
+  
+  @@index([proposedById])
+  @@index([proposedForId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("activity_proposals")
+}
+
+model WorkoutProposal {
+  id          String         @id @default(cuid())
+  action      ProposalAction
+  status      ProposalStatus @default(PENDING_APPROVAL)
+  
+  // Dati dell'allenamento proposto
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  type        WorkoutType
+  duration    Int?           // in minuti
+  intensity   String?        @db.VarChar(50)
+  exercises   String?        @db.Text // JSON degli esercizi
+  notes       String?        @db.Text
+  
+  // Relazioni
+  proposedBy  User   @relation("ProposedWorkouts", fields: [proposedById], references: [id], onDelete: Cascade)
+  proposedById String
+  proposedFor User   @relation("ReceivedWorkoutProposals", fields: [proposedForId], references: [id], onDelete: Cascade)
+  proposedForId String
+  
+  // Se è una modifica, riferimento all'originale
+  originalWorkoutId String?
+  
+  // Metadati
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  respondedAt DateTime?
+  responseNotes String? @db.Text
+  
+  @@index([proposedById])
+  @@index([proposedForId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("workout_proposals")
+}
+
+// ========================================
+// ENUMERAZIONI
+// ========================================
+enum UserRole {
+  ATHLETE
+  COACH
+  PROFESSIONAL
+  ADMIN
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+enum WorkoutType {
+  RUNNING
+  CYCLING
+  SWIMMING
+  STRENGTH
+  CARDIO
+  FLEXIBILITY
+  SPORTS
+  YOGA
+  PILATES
+  CROSSFIT
+  MARTIAL_ARTS
+  CLIMBING
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  PREMIUM
+  ENTERPRISE
+}
+
+enum ActivityType {
+  WORKOUT
+  THERAPY
+  NUTRITION
+  MENTAL
+  ASSESSMENT
+  RECOVERY
+  MEETING
+  CUSTOM
+}
+
+enum ActivityStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
+  SUPPORT
+  ANNOUNCEMENT
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum ParticipantRole {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+// ========================================
+// NUOVI ENUM PER I CAMPI SPORTIVI
+// ========================================
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum DominantHand {
+  RIGHT
+  LEFT
+  AMBIDEXTROUS
+}
+
+enum SportLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ELITE
+}
+
+enum SportGoal {
+  RECREATIONAL
+  COMPETITIVE
+  PROFESSIONAL
+}
+
+// ========================================
+// ENUM PER SISTEMA DI PROPOSTE
+// ========================================
+enum ProposalType {
+  ACTIVITY
+  WORKOUT
+  MODIFICATION
+  DELETION
+}
+
+enum ProposalAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum ProposalStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  EXPIRED
+}

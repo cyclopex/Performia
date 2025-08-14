@@ -62,3 +62,7 @@ scripts/test-auth.js
 .env
 *.log
 *.backup
+
+# Uploaded images (exclude uploaded files but keep directory structure)
+public/uploads/profiles/*
+!public/uploads/profiles/.gitkeep

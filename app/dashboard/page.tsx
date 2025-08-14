@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
+import Image from 'next/image'
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -24,14 +25,19 @@ import {
   List
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import Navbar from '@/components/layout/Navbar'
 import Button from '@/components/ui/Button'
 import AddActivityModal from '@/components/AddActivityModal'
 import EditActivityModal from '@/components/EditActivityModal'
 import AddWorkoutModal from '@/components/AddWorkoutModal'
+import EditWorkoutModal from '@/components/workouts/EditWorkoutModal'
 import AddRaceModal from '@/components/AddRaceModal'
 import AddAnthropometricModal from '@/components/AddAnthropometricModal'
 import { ScheduledActivity, Workout, RaceResult, AnthropometricData } from '@/types/activity'
+import DraggableActivity from '@/components/calendar/DraggableActivity'
+import DroppableDay from '@/components/calendar/DroppableDay'
 
 
 
@@ -74,12 +80,30 @@ export default function DashboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [raceResults, setRaceResults] = useState<RaceResult[]>([])
   const [showAddWorkout, setShowAddWorkout] = useState(false)
+  const [showEditWorkout, setShowEditWorkout] = useState(false)
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [showAddRace, setShowAddRace] = useState(false)
   const [showAddAnthropometric, setShowAddAnthropometric] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('ALL')
   const [filterStatus, setFilterStatus] = useState('ALL')
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'stats'>('calendar')
+  
+  // Stato per i dati del profilo
+  const [userProfile, setUserProfile] = useState<{ name: string; avatar?: string } | null>(null)
+
+  // Stati per il drag & drop
+  const [draggedActivity, setDraggedActivity] = useState<any>(null)
+  const [draggedFromDay, setDraggedFromDay] = useState<string | null>(null)
+
+  // Sensori per il drag & drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
 
   // Carica le attività dal database
   const loadActivities = useCallback(async () => {
@@ -105,10 +129,15 @@ export default function DashboardPage() {
       const response = await fetch('/api/workouts')
       if (response.ok) {
         const data = await response.json()
-        setWorkouts(data)
+        // L'API restituisce { workouts: [...], pagination: {...} }
+        setWorkouts(data.workouts || data || [])
+      } else {
+        console.error('Errore nel caricamento degli allenamenti:', response.status, response.statusText)
+        setWorkouts([])
       }
     } catch (error) {
       console.error('Errore nel caricamento degli allenamenti:', error)
+      setWorkouts([])
     }
   }, [session?.user?.id])
 
@@ -120,15 +149,41 @@ export default function DashboardPage() {
       const response = await fetch('/api/race-results')
       if (response.ok) {
         const data = await response.json()
-        setRaceResults(data)
+        setRaceResults(data.raceResults || data || [])
+      } else {
+        console.error('Errore nel caricamento dei risultati gara:', response.status, response.statusText)
+        setRaceResults([])
       }
     } catch (error) {
       console.error('Errore nel caricamento dei risultati gara:', error)
+      setRaceResults([])
     }
   }, [session?.user?.id])
 
-  // Calcola le statistiche per i KPI
+  // Carica i dati del profilo utente
+  const loadUserProfile = useCallback(async () => {
+    if (!session?.user?.id) return
+    
+    try {
+      const response = await fetch('/api/users/profile')
+      if (response.ok) {
+        const data = await response.json()
+        setUserProfile({
+          name: data.name,
+          avatar: data.profile?.avatar
+        })
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento del profilo:', error)
+    }
+  }, [session?.user?.id])
+
+  // Calcola le statistiche per i KPI con controlli di sicurezza
   const workoutStats = useMemo(() => {
+    if (!workouts || workouts.length === 0) {
+      return { total: 0, completed: 0, planned: 0, cancelled: 0, byType: {} }
+    }
+    
     const total = workouts.length
     const completed = workouts.filter(w => w.status === 'COMPLETED').length
     const planned = workouts.filter(w => w.status === 'PLANNED').length
@@ -144,14 +199,20 @@ export default function DashboardPage() {
   }, [workouts])
 
   const raceStats = useMemo(() => {
+    if (!raceResults || raceResults.length === 0) {
+      return { total: 0, completed: 0 }
+    }
+    
     const total = raceResults.length
     const completed = raceResults.filter(r => r.time).length
     
     return { total, completed }
   }, [raceResults])
 
-  // Filtra gli allenamenti per la vista lista
+  // Filtra gli allenamenti per la vista lista con controlli di sicurezza
   const filteredWorkouts = useMemo(() => {
+    if (!workouts || workouts.length === 0) return []
+    
     return workouts.filter(workout => {
       const matchesSearch = workout.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (workout.description && workout.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -168,8 +229,9 @@ export default function DashboardPage() {
       loadActivities()
       loadWorkouts()
       loadRaceResults()
+      loadUserProfile()
     }
-  }, [session?.user?.id, loadActivities, loadWorkouts, loadRaceResults])
+  }, [session?.user?.id, loadActivities, loadWorkouts, loadRaceResults, loadUserProfile])
 
   // Redirect se non autenticato
   if (status === 'loading') {
@@ -199,17 +261,17 @@ export default function DashboardPage() {
   }
 
   const getActivitiesForDay = (date: string) => {
-    const dayActivities = scheduledActivities.filter(activity => {
+    const dayActivities = (scheduledActivities || []).filter(activity => {
       const activityDate = new Date(activity.date).toDateString()
       return activityDate === new Date(date).toDateString()
     })
     
-    const dayWorkouts = workouts.filter(workout => {
+    const dayWorkouts = (workouts || []).filter(workout => {
       const workoutDate = new Date(workout.date).toDateString()
       return workoutDate === new Date(date).toDateString()
     })
     
-    const dayRaces = raceResults.filter(race => {
+    const dayRaces = (raceResults || []).filter(race => {
       const raceDate = new Date(race.date).toDateString()
       return raceDate === new Date(date).toDateString()
     })
@@ -227,6 +289,11 @@ export default function DashboardPage() {
       case 'CARDIO':
       case 'FLEXIBILITY':
       case 'SPORTS':
+      case 'YOGA':
+      case 'PILATES':
+      case 'CROSSFIT':
+      case 'MARTIAL_ARTS':
+      case 'CLIMBING':
       case 'OTHER':
         return <Activity className="w-4 h-4" />
       case 'THERAPY':
@@ -277,6 +344,11 @@ export default function DashboardPage() {
       case 'CARDIO':
       case 'FLEXIBILITY':
       case 'SPORTS':
+      case 'YOGA':
+      case 'PILATES':
+      case 'CROSSFIT':
+      case 'MARTIAL_ARTS':
+      case 'CLIMBING':
       case 'OTHER':
         return 'bg-blue-100 text-blue-800 border-blue-200'
       case 'THERAPY':
@@ -291,7 +363,7 @@ export default function DashboardPage() {
       case 'COMPETITION':
       case 'TIME_TRIAL':
       case 'FUN_RUN':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        return 'bg-red-100 text-red-800 border-red-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
@@ -390,6 +462,24 @@ export default function DashboardPage() {
     }
   }
 
+  const handleEditWorkout = async (workoutId: string, workoutData: Partial<Workout>) => {
+    try {
+      const response = await fetch(`/api/workouts/${workoutId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workoutData)
+      })
+
+      if (response.ok) {
+        await loadWorkouts()
+        setShowEditWorkout(false)
+        setSelectedWorkout(null)
+      }
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento dell\'allenamento:', error)
+    }
+  }
+
   const handleDeleteWorkout = async (workoutId: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo allenamento?')) return
     
@@ -403,6 +493,19 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Errore nell\'eliminazione dell\'allenamento:', error)
+    }
+  }
+
+  // Apri modal modifica allenamento
+  const openEditWorkoutModal = (workout: Workout) => {
+    setSelectedWorkout(workout)
+    setShowEditWorkout(true)
+  }
+
+  // Apri modal eliminazione allenamento
+  const openDeleteWorkoutModal = (workout: Workout) => {
+    if (confirm(`Sei sicuro di voler eliminare l'allenamento "${workout.title}"?`)) {
+      handleDeleteWorkout(workout.id)
     }
   }
 
@@ -476,6 +579,137 @@ export default function DashboardPage() {
     setCurrentWeek(new Date())
   }
 
+  // Funzioni per il drag & drop
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event
+    const activityId = active.id as string
+    const activity = findActivityById(activityId)
+    
+    if (activity) {
+      setDraggedActivity(activity)
+      // Trova il giorno di origine
+      const fromDay = findDayByActivityId(activityId)
+      setDraggedFromDay(fromDay)
+    }
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (over && active.id !== over.id) {
+      const activityId = active.id as string
+      const newDay = over.id as string
+      const activity = findActivityById(activityId)
+      
+      if (activity && newDay) {
+        await moveActivityToNewDay(activity, newDay)
+      }
+    }
+    
+    setDraggedActivity(null)
+    setDraggedFromDay(null)
+  }
+
+  const handleDragCancel = () => {
+    setDraggedActivity(null)
+    setDraggedFromDay(null)
+  }
+
+  // Funzioni di utilità per il drag & drop
+  const findActivityById = (activityId: string) => {
+    // Cerca nelle attività programmate
+    const scheduledActivity = scheduledActivities.find(a => a.id === activityId)
+    if (scheduledActivity) return scheduledActivity
+    
+    // Cerca negli allenamenti
+    const workout = workouts.find(w => w.id === activityId)
+    if (workout) return workout
+    
+    // Cerca nelle gare
+    const race = raceResults.find(r => r.id === activityId)
+    if (race) return race
+    
+    return null
+  }
+
+  const findDayByActivityId = (activityId: string) => {
+    const weekDays = getWeekDays(currentWeek)
+    
+    for (const day of weekDays) {
+      const dayActivities = getActivitiesForDay(day.toISOString())
+      const found = dayActivities.find(a => 
+        ('id' in a && a.id === activityId) ||
+        ('id' in a && a.id === activityId)
+      )
+      
+      if (found) {
+        return day.toISOString()
+      }
+    }
+    
+    return null
+  }
+
+  const moveActivityToNewDay = async (activity: any, newDay: string) => {
+    try {
+      const newDate = new Date(newDay)
+      
+      if ('type' in activity && 'status' in activity && !('time' in activity)) {
+        // È un Workout
+        await updateWorkoutDate(activity.id, newDate)
+      } else if ('title' in activity && 'type' in activity && 'status' in activity && 'time' in activity) {
+        // È una ScheduledActivity
+        await updateActivityDate(activity.id, newDate)
+      } else if ('eventName' in activity && 'eventType' in activity) {
+        // È un RaceResult
+        await updateRaceDate(activity.id, newDate)
+      }
+      
+      // Ricarica i dati
+      await loadActivities()
+      await loadWorkouts()
+      await loadRaceResults()
+    } catch (error) {
+      console.error('Errore nello spostamento dell\'attività:', error)
+    }
+  }
+
+  const updateWorkoutDate = async (workoutId: string, newDate: Date) => {
+    const response = await fetch(`/api/workouts/${workoutId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: newDate.toISOString() })
+    })
+    
+    if (!response.ok) {
+      throw new Error('Errore nell\'aggiornamento dell\'allenamento')
+    }
+  }
+
+  const updateActivityDate = async (activityId: string, newDate: Date) => {
+    const response = await fetch(`/api/activities/${activityId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: newDate.toISOString() })
+    })
+    
+    if (!response.ok) {
+      throw new Error('Errore nell\'aggiornamento dell\'attività')
+    }
+  }
+
+  const updateRaceDate = async (raceId: string, newDate: Date) => {
+    const response = await fetch(`/api/race-results/${raceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: newDate.toISOString() })
+    })
+    
+    if (!response.ok) {
+      throw new Error('Errore nell\'aggiornamento della gara')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -541,6 +775,7 @@ export default function DashboardPage() {
                 Gara
               </Button>
 
+
             </div>
           </div>
         </div>
@@ -561,8 +796,8 @@ export default function DashboardPage() {
           
           <div className="bg-white rounded-xl shadow-sport p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Trophy className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Trophy className="w-6 h-6 text-red-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Gare</p>
@@ -590,7 +825,7 @@ export default function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Attività</p>
-                <p className="text-2xl font-bold text-gray-900">{scheduledActivities.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{scheduledActivities?.length || 0}</p>
               </div>
             </div>
           </div>
@@ -616,69 +851,47 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-7 gap-4">
-                {getWeekDays(currentWeek).map((day, index) => {
-                  const dayActivities = getActivitiesForDay(day.toISOString())
-                  const isToday = day.toDateString() === new Date().toDateString()
-                  
-                  return (
-                    <div key={index} className={`min-h-32 p-3 rounded-lg border ${
-                      isToday ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-                    }`}>
-                      <div className={`text-center mb-2 ${
-                        isToday ? 'text-blue-600 font-semibold' : 'text-gray-600'
-                      }`}>
-                        <div className="text-sm font-medium">
-                          {day.toLocaleDateString('it-IT', { weekday: 'short' })}
-                        </div>
-                        <div className="text-lg font-bold">
-                          {day.getDate()}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        {dayActivities.length > 0 ? (
-                          dayActivities.map((activity, activityIndex) => (
-                            <div
-                              key={activityIndex}
-                              className={`p-2 rounded text-xs border ${getActivityColor(getActivityType(activity))} cursor-pointer hover:opacity-80 transition-opacity`}
-                              onClick={() => {
-                                if ('duration' in activity && 'type' in activity && 'status' in activity && !('time' in activity)) {
-                                  // È un Workout
-                                  console.log('Workout non gestito:', activity)
-                                  setShowEditActivity(true)
-                                } else if ('title' in activity && 'type' in activity && 'status' in activity && 'time' in activity) {
-                                  // È una ScheduledActivity
-                                  openEditModal(activity as ScheduledActivity)
-                                } else if ('eventName' in activity && 'eventType' in activity) {
-                                  // È un RaceResult - non modificabile, solo visualizzabile
-                                  console.log('RaceResult non modificabile:', activity)
-                                }
-                              }}
-                            >
-                              <div className="flex items-center space-x-1">
-                                {getActivityIcon(getActivityType(activity))}
-                                <span className="font-medium truncate">
-                                  {getActivityTitle(activity)}
-                                </span>
-                              </div>
-                              {('time' in activity && activity.time) && (
-                                <div className="text-xs opacity-75 mt-1">
-                                  {formatTime(activity.time)}
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-xs text-gray-400 text-center py-2">
-                            Nessuna attività
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <DndContext
+                sensors={sensors}
+                onDragEnd={handleDragEnd}
+                onDragStart={handleDragStart}
+                onDragCancel={handleDragCancel}
+              >
+                <SortableContext
+                  items={getWeekDays(currentWeek).flatMap(day => {
+                    const dayActivities = getActivitiesForDay(day.toISOString())
+                    return dayActivities.map(activity => activity.id)
+                  })}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="grid grid-cols-7 gap-4">
+                    {getWeekDays(currentWeek).map((day, index) => (
+                      <DroppableDay
+                        key={day.toISOString()}
+                        day={day}
+                        activities={getActivitiesForDay(day.toISOString())}
+                        onAddActivity={handleAddActivity}
+                        onEditActivity={openEditModal}
+                        onDeleteActivity={handleDeleteWorkout}
+                        onOpenEditWorkoutModal={openEditWorkoutModal}
+                        onOpenDeleteWorkoutModal={openDeleteWorkoutModal}
+                        isToday={day.toDateString() === new Date().toDateString()}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+                <DragOverlay>
+                  {draggedActivity ? (
+                    <DraggableActivity
+                      activity={draggedActivity}
+                      onEdit={openEditModal}
+                      onDelete={handleDeleteWorkout}
+                      onOpenEditWorkoutModal={openEditWorkoutModal}
+                      onOpenDeleteWorkoutModal={openDeleteWorkoutModal}
+                    />
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
             </div>
 
             {/* Carico Settimanale e RPE */}
@@ -797,13 +1010,13 @@ export default function DashboardPage() {
                       
                       <div className="flex items-center space-x-2 ml-4">
                         <button
-                          onClick={() => console.log('Edit workout:', workout)}
+                          onClick={() => openEditWorkoutModal(workout)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteWorkout(workout.id)}
+                          onClick={() => openDeleteWorkoutModal(workout)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -813,7 +1026,7 @@ export default function DashboardPage() {
                   </div>
                 ))}
                 
-                {filteredWorkouts.length === 0 && (
+                {(!filteredWorkouts || filteredWorkouts.length === 0) && (
                   <div className="p-6 text-center text-gray-500">
                     <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p>Nessun allenamento trovato</p>
@@ -1009,6 +1222,18 @@ export default function DashboardPage() {
           isOpen={showAddWorkout}
           onClose={() => setShowAddWorkout(false)}
           onAdd={handleAddWorkout}
+        />
+      )}
+
+      {showEditWorkout && selectedWorkout && (
+        <EditWorkoutModal
+          isOpen={showEditWorkout}
+          onClose={() => {
+            setShowEditWorkout(false)
+            setSelectedWorkout(null)
+          }}
+          onSave={handleEditWorkout}
+          workout={selectedWorkout}
         />
       )}
 

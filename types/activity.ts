@@ -26,8 +26,12 @@ export interface Workout {
   calories?: number
   rpe?: number
   notes?: string
-  type: 'RUNNING' | 'CYCLING' | 'SWIMMING' | 'STRENGTH' | 'CARDIO' | 'FLEXIBILITY' | 'SPORTS' | 'OTHER'
+  type: 'RUNNING' | 'CYCLING' | 'SWIMMING' | 'STRENGTH' | 'CARDIO' | 'FLEXIBILITY' | 'SPORTS' | 'YOGA' | 'PILATES' | 'CROSSFIT' | 'MARTIAL_ARTS' | 'CLIMBING' | 'OTHER'
   status: 'PLANNED' | 'COMPLETED' | 'CANCELLED'
+  location?: string
+  tags?: string[]
+  stravaId?: string // ID dell'attività su Strava
+  stravaData?: any // Dati completi dell'attività Strava
   userId: string
   createdAt: string
   updatedAt: string
@@ -38,11 +42,13 @@ export interface RaceResult {
   eventName: string
   eventType: 'RACE' | 'COMPETITION' | 'TIME_TRIAL' | 'FUN_RUN'
   date: string
-  distance?: number
   time?: string
+  distance?: number
   position?: number
   totalParticipants?: number
   notes?: string
+  location?: string
+  status: 'PLANNED' | 'COMPLETED' | 'CANCELLED'
   userId: string
   createdAt: string
   updatedAt: string

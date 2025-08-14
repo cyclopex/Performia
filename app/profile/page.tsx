@@ -21,6 +21,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
 import Navbar from '@/components/layout/Navbar'
 import Button from '@/components/ui/Button'
+import ImageUploadModal from '@/components/ImageUploadModal'
 
 interface ProfileData {
   id: string
@@ -61,6 +62,10 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState<UserData | null>(null)
   
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Nuovi stati per i modali
+  const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [showCoverModal, setShowCoverModal] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -83,6 +88,19 @@ export default function ProfilePage() {
       console.error('Errore nel caricamento del profilo:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Funzione per aggiornare le immagini
+  const handleImageUpdate = (imageUrl: string, type: 'avatar' | 'cover') => {
+    if (userData) {
+      setUserData({
+        ...userData,
+        profile: {
+          ...userData.profile,
+          [type === 'avatar' ? 'avatar' : 'coverImage']: imageUrl
+        }
+      })
     }
   }
 
@@ -167,41 +185,53 @@ export default function ProfilePage() {
         {/* Header del profilo */}
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
           {/* Cover image */}
-          <div className="h-48 bg-gradient-to-r from-primary-600 to-primary-800 relative">
+          <div className="h-48 bg-gradient-to-r from-primary-600 to-primary-800 relative group">
             {userData.profile.coverImage && (
               <Image 
                 src={userData.profile.coverImage} 
                 alt="Cover" 
-                className="w-full h-full object-cover" width={400} height={300}
+                className="w-full h-full object-cover" 
+                width={400} 
+                height={300}
               />
             )}
-            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+            <div className="absolute inset-0 bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all duration-300"></div>
+            
+            {/* Pulsante modifica cover */}
+            <button
+              onClick={() => setShowCoverModal(true)}
+              className="absolute top-4 right-4 p-3 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full shadow-lg transition-all duration-300 opacity-0 group-hover:opacity-100"
+            >
+              <Edit className="w-5 h-5 text-gray-700" />
+            </button>
           </div>
           
           {/* Profile info */}
           <div className="relative px-8 pb-8">
             <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
               {/* Avatar */}
-              <div className="relative -mt-20">
-                <div className="w-40 h-40 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white text-6xl font-bold shadow-xl border-4 border-white">
+              <div className="relative -mt-20 group">
+                <div className="w-40 h-40 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white text-6xl font-bold shadow-xl border-4 border-white overflow-hidden">
                   {userData.profile.avatar ? (
                     <Image 
                       src={userData.profile.avatar} 
                       alt="Avatar" 
-                      className="w-full h-full rounded-full object-cover" width={160} height={160}
+                      className="w-full h-full rounded-full object-cover" 
+                      width={160} 
+                      height={160}
                     />
                   ) : (
                     userData.name.charAt(0).toUpperCase()
                   )}
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute bottom-2 right-2 bg-white shadow-lg"
-                  onClick={() => {}}
+                
+                {/* Pulsante modifica avatar */}
+                <button
+                  onClick={() => setShowAvatarModal(true)}
+                  className="absolute bottom-2 right-2 p-3 bg-white shadow-lg rounded-full hover:shadow-xl transition-all duration-300 opacity-0 group-hover:opacity-100"
                 >
-                  <Edit className="w-4 h-4" />
-                </Button>
+                  <Edit className="w-4 h-4 text-gray-700" />
+                </button>
               </div>
               
               {/* Info principali */}
@@ -562,6 +592,27 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Modali per l'upload delle immagini */}
+      {showAvatarModal && (
+        <ImageUploadModal
+          isOpen={showAvatarModal}
+          onClose={() => setShowAvatarModal(false)}
+          type="avatar"
+          currentImage={userData?.profile?.avatar}
+          onImageUpdate={(imageUrl) => handleImageUpdate(imageUrl, 'avatar')}
+        />
+      )}
+
+      {showCoverModal && (
+        <ImageUploadModal
+          isOpen={showCoverModal}
+          onClose={() => setShowCoverModal(false)}
+          type="cover"
+          currentImage={userData?.profile?.coverImage}
+          onImageUpdate={(imageUrl) => handleImageUpdate(imageUrl, 'cover')}
+        />
+      )}
     </div>
   )
 }

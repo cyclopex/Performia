@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
+import Image from 'next/image'
 import { Menu, X, User, LogOut, Settings, BarChart3, Clock, Plus, Calendar, Dumbbell } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import ProposalsPanel from '@/components/ProposalsPanel'
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [showCreateProposal, setShowCreateProposal] = useState(false)
   const [proposalType, setProposalType] = useState<'activity' | 'workout'>('activity')
   const [showProposalDropdown, setShowProposalDropdown] = useState(false)
+  const [userProfile, setUserProfile] = useState<{ name: string; avatar?: string } | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleSignOut = () => {
@@ -51,14 +53,39 @@ export default function Navbar() {
     setIsDropdownOpen(false)
   }, [])
 
+  // Carica il profilo utente quando cambia la sessione
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadUserProfile()
+    }
+  }, [session?.user?.id])
+
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen)
+  }
+
+  // Carica i dati del profilo utente
+  const loadUserProfile = async () => {
+    if (!session?.user?.id) return
+    
+    try {
+      const response = await fetch('/api/users/profile')
+      if (response.ok) {
+        const data = await response.json()
+        setUserProfile({
+          name: data.name,
+          avatar: data.profile?.avatar
+        })
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento del profilo:', error)
+    }
   }
 
   return (
     <nav className="bg-white shadow-sport border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-sport rounded-lg flex items-center justify-center">
@@ -79,6 +106,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/workouts" className="text-gray-700 hover:text-primary-600 transition-colors">
                   Allenamenti
+                </Link>
+                <Link href="/gare" className="text-gray-700 hover:text-primary-600 transition-colors">
+                  Competizioni
                 </Link>
                 <Link href="/chat" className="text-gray-700 hover:text-primary-600 transition-colors">
                   Chat
@@ -164,12 +194,22 @@ export default function Navbar() {
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="true"
                 >
-                  <div className="w-8 h-8 bg-gradient-sport rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-semibold">
-                      {session.user?.name?.charAt(0) || 'U'}
-                    </span>
+                  <div className="w-[38px] h-[38px] bg-gradient-sport rounded-full flex items-center justify-center overflow-hidden">
+                    {userProfile?.avatar ? (
+                      <Image 
+                        src={userProfile.avatar} 
+                        alt="Foto profilo" 
+                        width={38} 
+                        height={38}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-sm font-semibold text-base">
+                        {userProfile?.name?.charAt(0) || session.user?.name?.charAt(0) || 'U'}
+                      </span>
+                    )}
                   </div>
-                  <span>{session.user?.name || 'Utente'}</span>
+                  <span>{userProfile?.name || session.user?.name || 'Utente'}</span>
                 </button>
                 
                 {/* Dropdown Menu */}
@@ -229,6 +269,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/workouts" className="block text-gray-700 hover:text-primary-600 transition-colors">
                   Allenamenti
+                </Link>
+                <Link href="/gare" className="block text-gray-700 hover:text-primary-600 transition-colors">
+                  Competizioni
                 </Link>
                 <Link href="/chat" className="block text-gray-700 hover:text-primary-600 transition-colors">
                   Chat

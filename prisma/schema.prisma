@@ -186,10 +186,13 @@ model Workout {
   splits       String?     @db.Text // Lap/split data JSON
   notes        String?     @db.Text
   type         WorkoutType
+  status       String      @default("COMPLETED") // PLANNED, COMPLETED, CANCELLED
   isPublic     Boolean     @default(false)
   tags         String?     @db.Text // Tags JSON array
   location     String?     @db.VarChar(200)
   gpsData      String?     @db.Text // GPS track JSON
+  stravaId     String?     // ID dell'attività su Strava
+  stravaData   String?     @db.Text // Dati completi dell'attività Strava JSON
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -202,6 +205,7 @@ model Workout {
   @@index([date])
   @@index([isPublic])
   @@index([assignedBy])
+  @@index([stravaId])
   @@map("workouts")
 }
 
@@ -583,12 +587,18 @@ enum SportLevel {
   INTERMEDIATE
   ADVANCED
   ELITE
+  EXPERT
 }
 
 enum SportGoal {
   RECREATIONAL
   COMPETITIVE
   PROFESSIONAL
+  PERFORMANCE
+  FITNESS
+  REHABILITATION
+  COMPETITION
+  RECREATION
 }
 
 // ========================================

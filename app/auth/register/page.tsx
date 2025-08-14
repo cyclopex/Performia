@@ -434,7 +434,7 @@ export default function RegisterPage() {
           <option value="BEGINNER">Principiante</option>
           <option value="INTERMEDIATE">Intermedio</option>
           <option value="ADVANCED">Avanzato</option>
-          <option value="ELITE">Elite</option>
+          <option value="EXPERT">Esperto</option>
         </select>
       </div>
 

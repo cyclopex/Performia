@@ -14,20 +14,23 @@ const registerSchema = z.object({
   city: z.string().optional(),
   height: z.string().optional(),
   weight: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   dominantHand: z.enum(['RIGHT', 'LEFT', 'AMBIDEXTROUS']).optional(),
   sports: z.array(z.string()).optional(),
   sportLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']).optional(),
   yearsExperience: z.string().optional(),
-  sportGoals: z.enum(['PERFORMANCE', 'FITNESS', 'REHABILITATION', 'COMPETITION', 'RECREATION']).optional(),
+  sportGoals: z.enum(['RECREATIONAL', 'COMPETITIVE', 'PROFESSIONAL', 'PERFORMANCE', 'FITNESS', 'REHABILITATION', 'COMPETITION', 'RECREATION']).optional(),
   trainingAvailability: z.array(z.string()).optional(),
-  trainingFrequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).optional(),
+  trainingFrequency: z.string().optional(), // Form invia stringhe come "1-2", "3-4", "daily"
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('📝 Dati ricevuti per registrazione:', body)
+    
     const validatedData = registerSchema.parse(body)
+    console.log('✅ Dati validati:', validatedData)
     
     const { 
       name, 
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
           email,
           password: hashedPassword,
           role,
-          isApproved: role === 'ATHLETE', // Athletes are auto-approved
+          isApproved: true, // Tutti i ruoli sono auto-approvati
         }
       })
 
@@ -113,6 +116,7 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('❌ Errore validazione Zod:', error.errors)
       return NextResponse.json(
         { error: error.errors[0].message },
         { status: 400 }
